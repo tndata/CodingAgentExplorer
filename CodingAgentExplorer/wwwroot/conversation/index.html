@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Agent Explorer - Conversation View</title>
+    <link rel="stylesheet" href="../css/conversation.css">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <nav class="toolbar">
+                <a href="/" class="toolbar-link">Home</a>
+                <span class="toolbar-sep">|</span>
+                <a href="/inspector/index.html" class="toolbar-link">Inspector</a>
+                <span class="toolbar-sep">|</span>
+                <span class="toolbar-active">Conversation</span>
+            </nav>
+            <h1>Conversation View</h1>
+        </div>
+        <div class="status">
+            <button id="clearBtn" class="clear-btn">Clear</button>
+            <span class="separator">|</span>
+            <span id="connectionStatus" class="status-dot disconnected"></span>
+            <span id="connectionText">Disconnected</span>
+            <span class="separator">|</span>
+            <span id="requestCount">0 exchanges</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="conversationFeed" class="conversation-feed">
+            <p class="empty-state">Waiting for API requests...</p>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script src="../js/conversation.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+###############################################################################
+# Set default behavior to automatically normalize line endings.
+###############################################################################
+* text=auto
+
+###############################################################################
+# Set default behavior for command prompt diff.
+#
+# This is need for earlier builds of msysgit that did not have it on by
+# default for csharp files.
+# Note: This is only used by command line
+###############################################################################
+#*.cs     diff=csharp
+
+###############################################################################
+# Set the merge driver for project and solution files
+#
+# Merging from the command prompt will add diff markers to the files if there
+# are conflicts (Alarm! Alarm!). The temporary الحل is to treat these files as
+# temporary merge files. See http://blog.plasticscm.com/2010/11/merging-results-in-visual-studio.html
+###############################################################################
+*.sln        merge=binary
+*.csproj     merge=binary
+
+###############################################################################
+# behavior for image files
+#
+# image files are treated as binary by default.
+###############################################################################
+*.jpg        binary
+*.png        binary
+*.gif        binary
+*.ico        binary
+
+###############################################################################
+# diff behavior for common document files
+#
+# Convert binary document formats to text before diffing them. This feature
+# is only available from the command line. Turn it on by uncommenting the
+# entries below.
+###############################################################################
+#*.doc       diff=astextplain
+#*.DOC       diff=astextplain
+#*.docx      diff=astextplain
+#*.DOCX      diff=astextplain
+#*.dot       diff=astextplain
+#*.DOT       diff=astextplain
+#*.pdf       diff=astextplain
+#*.PDF       diff=astextplain
+#*.rtf       diff=astextplain
+#*.RTF       diff=astextplain
+
+###############################################################################
+# .NET specific
+###############################################################################
+*.cs         text diff=csharp
+*.cshtml     text diff=html
+*.csx        text diff=csharp
+*.razor      text diff=html
+*.json       text
+*.xml        text
+*.config     text
+*.md         text diff=markdown
+*.yml        text
+*.yaml       text
+*.sh         text eol=lf
+*.bat        text eol=crlf
+*.cmd        text eol=crlf

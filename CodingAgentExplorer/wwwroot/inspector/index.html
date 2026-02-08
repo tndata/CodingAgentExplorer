@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Agent Explorer - HTTP Inspector</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <nav class="toolbar">
+                <a href="/" class="toolbar-link">Home</a>
+                <span class="toolbar-sep">|</span>
+                <span class="toolbar-active">Inspector</span>
+                <span class="toolbar-sep">|</span>
+                <a href="/conversation/index.html" class="toolbar-link">Conversation</a>
+            </nav>
+            <h1>HTTP Inspector</h1>
+        </div>
+        <div class="status">
+            <button id="clearBtn" class="clear-btn">Clear</button>
+            <span class="separator">|</span>
+            <span id="connectionStatus" class="status-dot disconnected"></span>
+            <span id="connectionText">Disconnected</span>
+            <span class="separator">|</span>
+            <span id="requestCount">0 requests</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="requestList" class="request-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-time">Time</th>
+                        <th class="col-method">Method</th>
+                        <th class="col-path">Path</th>
+                        <th class="col-model">Model</th>
+                        <th class="col-stream">Stream</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-tokens">In / Out</th>
+                        <th class="col-cache">Cache (Create/Read)</th>
+                        <th class="col-duration">Duration</th>
+                        <th class="col-ttft">TTFT</th>
+                    </tr>
+                </thead>
+                <tbody id="requestTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div id="detailPanel" class="detail-panel hidden">
+            <div class="detail-header">
+                <h2 id="detailTitle">Request Details</h2>
+                <div class="detail-header-actions">
+                    <button id="copyJsonBtn" class="copy-json-btn" title="Copy request & response bodies as JSON">Copy JSON</button>
+                    <button id="closeDetail" class="close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="detail-tabs">
+                <button class="tab-btn active" data-tab="overview">Overview</button>
+                <button class="tab-btn" data-tab="request">Request</button>
+                <button class="tab-btn" data-tab="response">Response</button>
+                <button class="tab-btn" data-tab="events">SSE Events</button>
+            </div>
+            <div id="detailContent" class="detail-content">
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>

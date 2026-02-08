@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Agent Explorer</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --purple: #bc8cff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+        .cards {
+            display: flex;
+            gap: 24px;
+        }
+        .card {
+            display: block;
+            width: 280px;
+            padding: 28px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text);
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .card:hover {
+            border-color: var(--accent);
+            background: var(--bg-tertiary);
+        }
+        .card-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .card h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .card-inspector .card-icon { color: var(--accent); }
+        .card-conversation .card-icon { color: var(--purple); }
+    </style>
+</head>
+<body>
+    <h1>Coding Agent Explorer</h1>
+    <p class="subtitle">Choose a view to inspect API traffic</p>
+    <div class="cards">
+        <a href="/inspector/index.html" class="card card-inspector">
+            <span class="card-icon">&#x1F50D;</span>
+            <h2>HTTP Inspector</h2>
+            <p>Table view of all proxied requests with headers, bodies, SSE events, and timing details.</p>
+        </a>
+        <a href="/conversation/index.html" class="card card-conversation">
+            <span class="card-icon">&#x1F4AC;</span>
+            <h2>Conversation View</h2>
+            <p>Chat-style display of Claude conversations showing messages, tool use, and responses.</p>
+        </a>
+    </div>
+</body>
+</html>
