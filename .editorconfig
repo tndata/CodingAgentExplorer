@@ -33,6 +33,19 @@ csharp_new_line_before_catch = true
 csharp_new_line_before_finally = true
 
 # XML project files
+
+# IDE0008: Use explicit type
+dotnet_diagnostic.IDE0008.severity = none
+
+# IDE0011: Add braces
+dotnet_diagnostic.IDE0011.severity = none
+
+# IDE0305: Simplify collection initialization
+dotnet_diagnostic.IDE0305.severity = none
+
+# IDE0290: Use primary constructor
+dotnet_diagnostic.IDE0290.severity = none
+
 [*.{csproj,props,targets}]
 indent_style = space
 indent_size = 2

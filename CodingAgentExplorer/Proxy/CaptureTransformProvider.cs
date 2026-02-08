@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -128,8 +128,8 @@ public class CaptureTransformProvider : ITransformProvider
 
                 var clientResponse = httpContext.Response;
                 clientResponse.ContentType = "text/event-stream";
-                clientResponse.Headers["Cache-Control"] = "no-cache";
-                clientResponse.Headers["Connection"] = "keep-alive";
+                clientResponse.Headers.CacheControl = "no-cache";
+                clientResponse.Headers.Connection = "keep-alive";
 
                 // Copy other response headers to client
                 foreach (var header in proxyResponse.Headers)

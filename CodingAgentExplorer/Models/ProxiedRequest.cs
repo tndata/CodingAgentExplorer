@@ -1,4 +1,4 @@
-namespace CodingAgentExplorer.Models;
+﻿namespace CodingAgentExplorer.Models;
 
 public class ProxiedRequest
 {
@@ -8,7 +8,7 @@ public class ProxiedRequest
     // Request
     public string Method { get; set; } = "";
     public string Path { get; set; } = "";
-    public Dictionary<string, string> RequestHeaders { get; set; } = new();
+    public Dictionary<string, string> RequestHeaders { get; set; } = [];
     public string? RequestBody { get; set; }
 
     // Parsed request fields
@@ -18,7 +18,7 @@ public class ProxiedRequest
 
     // Response
     public int? StatusCode { get; set; }
-    public Dictionary<string, string> ResponseHeaders { get; set; } = new();
+    public Dictionary<string, string> ResponseHeaders { get; set; } = [];
     public string? ResponseBody { get; set; }
 
     // Parsed response fields
@@ -30,7 +30,7 @@ public class ProxiedRequest
     public int? CacheReadInputTokens { get; set; }
 
     // SSE events (for streaming)
-    public List<SseEvent> SseEvents { get; set; } = new();
+    public List<SseEvent> SseEvents { get; set; } = [];
 
     // Timing
     public double? DurationMs { get; set; }

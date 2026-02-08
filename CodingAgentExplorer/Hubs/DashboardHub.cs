@@ -1,4 +1,4 @@
-using CodingAgentExplorer.Services;
+﻿using CodingAgentExplorer.Services;
 using Microsoft.AspNetCore.SignalR;
 
 namespace CodingAgentExplorer.Hubs;
