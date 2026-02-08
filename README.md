@@ -49,6 +49,8 @@ set ANTHROPIC_BASE_URL=http://localhost:8888
 $env:ANTHROPIC_BASE_URL = "http://localhost:8888"
 ```
 
+On Windows, you can also run `EnableProxy.bat` from the repo root to quickly set the variable. Run `DisableProxy.bat` to clear it. Both scripts only affect the current cmd session -- the variable is not persisted, so closing the terminal automatically clears it.
+
 Then use Claude Code as you normally would.
 
 ### 3. Open the dashboard

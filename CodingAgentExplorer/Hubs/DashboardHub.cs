@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace CodingAgentExplorer.Hubs;
 
-public class DashboardHub : Hub
+internal class DashboardHub : Hub
 {
     private readonly RequestStore _store;
 

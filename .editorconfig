@@ -34,6 +34,11 @@ csharp_new_line_before_finally = true
 
 # XML project files
 
+dotnet_diagnostic.CA1812.severity = none
+dotnet_diagnostic.CA1852.severity = none
+dotnet_diagnostic.CA2007.severity = none
+
+
 # IDE0008: Use explicit type
 dotnet_diagnostic.IDE0008.severity = none
 
