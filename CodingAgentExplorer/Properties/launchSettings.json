@@ -3,10 +3,10 @@
     "CodingAgentExplorer": {
       "commandName": "Project",
       "launchBrowser": true,
+      "launchUrl": "https://localhost:5001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "applicationUrl": "https://localhost:62560;http://localhost:62561"
+      }
     }
   }
 }

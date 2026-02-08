@@ -30,9 +30,10 @@ dotnet build
 dotnet run
 ```
 
-This starts two servers:
-- **Port 8888** - The reverse proxy (point your coding agent here)
-- **Port 5001** - The web dashboard (open this in your browser)
+This starts three endpoints:
+- **Port 8888** - The reverse proxy (HTTP, point your coding agent here)
+- **Port 5000** - The web dashboard (HTTP)
+- **Port 5001** - The web dashboard (HTTPS, auto-launches in browser)
 
 ### 2. Configure your coding agent
 
@@ -55,7 +56,7 @@ Then use Claude Code as you normally would.
 
 ### 3. Open the dashboard
 
-Navigate to [http://localhost:5001](http://localhost:5001) in your browser. You'll see two views:
+Navigate to [https://localhost:5001](https://localhost:5001) in your browser (opens automatically on `dotnet run`). You'll see two views:
 
 - **HTTP Inspector** - Table view of all proxied requests with headers, bodies, SSE events, and timing details
 - **Conversation View** - Chat-style display showing messages, tool use, and responses
@@ -66,7 +67,7 @@ Navigate to [http://localhost:5001](http://localhost:5001) in your browser. You'
   Coding Agent  ──►  CodingAgentExplorer (port 8888)  ──►  LLM API
                             │
                             ▼
-                     Web Dashboard (port 5001)
+                     Web Dashboard (port 5000/5001)
                      Real-time via SignalR
 ```
 
