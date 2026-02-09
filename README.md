@@ -2,7 +2,7 @@
 
 A real-time .NET proxy and dashboard for inspecting Claude Code API calls. Intercept, visualize, and analyze every request and response between Claude Code and the Anthropic API.
 
-Built as a learning tool for developers who want to understand what happens under the hood when AI coding agents work.
+Built as a teaching tool for [Tore Nestenius'](https://tn-data.se/) AI agent workshops and presentations, helping developers understand what happens under the hood when AI coding agents work.
 
 > **Note:** Currently supports [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with the Anthropic API. Support for additional coding agents may be added in the future.
 
@@ -110,6 +110,14 @@ speaker at conferences and user groups, Tore actively shares his knowledge and i
 * [Blog](https://nestenius.se/)
 * [Company](https://tn-data.se/)
 
+
+## Other Projects by the Author
+
+- [CloudDebugger](https://github.com/tndata/CloudDebugger) - A .NET web application designed to explore and learn about various Azure services and features, including authentication, configuration, networking, and more.
+
+## Want to learn more about AI agents?
+
+Join one of Tore's workshops for programmers at [tn-data.se/courses](https://tn-data.se/courses/) to deepen your understanding of AI coding agents, .NET development, and cloud architecture.
 
 ## License
 
