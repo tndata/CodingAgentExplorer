@@ -2,9 +2,11 @@
 
 A real-time .NET proxy and dashboard for inspecting Claude Code API calls. Intercept, visualize, and analyze every request and response between Claude Code and the Anthropic API.
 
-Built as a teaching tool for [Tore Nestenius'](https://tn-data.se/) AI agent workshops and presentations, helping developers understand what happens under the hood when AI coding agents work.
+Built as a teaching tool for [Tore Nestenius'](https://tn-data.se/) AI agent [orkshops and presentations](https://tn-data.se/courses/), helping developers understand what happens under the hood when AI coding agents work.
+
 
 > **Note:** Currently supports [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with the Anthropic API. Support for additional coding agents may be added in the future.
+
 
 <img src="docs/images/coding-agent-explorer-conversation-view.png" alt="Conversation View" width="800">
 
