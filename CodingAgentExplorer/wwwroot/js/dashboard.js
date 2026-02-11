@@ -78,8 +78,8 @@ connection.start().then(() => {
 function renderTable() {
     const fragment = document.createDocumentFragment();
 
-    // Show newest first
-    for (let i = requests.length - 1; i >= 0; i--) {
+    // Show oldest first (newest at bottom)
+    for (let i = 0; i < requests.length; i++) {
         const req = requests[i];
         const tr = document.createElement("tr");
         if (req.id === selectedId) tr.classList.add("selected");
