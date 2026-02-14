@@ -187,7 +187,8 @@ public class CaptureTransformProvider : ITransformProvider
             }
             else
             {
-                // Non-streaming: read the response body, decompressing if needed
+                // Non-streaming: buffer the response so both YARP and our capture can read it
+                await proxyResponse.Content.LoadIntoBufferAsync();
                 var body = await ReadResponseBodyAsync(proxyResponse);
                 proxiedRequest.ResponseBody = body;
 
@@ -264,23 +265,18 @@ public class CaptureTransformProvider : ITransformProvider
     private static async Task<string> ReadResponseBodyAsync(HttpResponseMessage response)
     {
         var contentEncoding = response.Content.Headers.ContentEncoding.FirstOrDefault();
-        var rawStream = await response.Content.ReadAsStreamAsync();
+        var rawBytes = await response.Content.ReadAsByteArrayAsync();
 
         Stream decodedStream = contentEncoding?.ToLowerInvariant() switch
         {
-            "gzip" => new GZipStream(rawStream, CompressionMode.Decompress),
-            "br" => new BrotliStream(rawStream, CompressionMode.Decompress),
-            "deflate" => new DeflateStream(rawStream, CompressionMode.Decompress),
-            _ => rawStream
+            "gzip" => new GZipStream(new MemoryStream(rawBytes), CompressionMode.Decompress),
+            "br" => new BrotliStream(new MemoryStream(rawBytes), CompressionMode.Decompress),
+            "deflate" => new DeflateStream(new MemoryStream(rawBytes), CompressionMode.Decompress),
+            _ => new MemoryStream(rawBytes)
         };
 
         using var reader = new StreamReader(decodedStream, Encoding.UTF8);
-        var body = await reader.ReadToEndAsync();
-
-        if (decodedStream != rawStream)
-            await decodedStream.DisposeAsync();
-
-        return body;
+        return await reader.ReadToEndAsync();
     }
 
     private static void ParseNonStreamingResponse(ProxiedRequest request, string body)
