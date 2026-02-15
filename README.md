@@ -16,6 +16,10 @@ The agentic conversation view allows you to explore the conversation with the LL
 
 The HTTP Inspector view lets you examine every API request and response in detail, including headers, bodies, and streaming SSE events.
 
+## Read More
+
+Want to learn more about the architecture and design decisions behind this project? Check out the detailed blog post: [Introducing the Coding Agent Explorer .NET](https://nestenius.se/ai/introducing-the-coding-agent-explorer-net/)
+
 ## What It Does
 
 Coding Agent Explorer sits between your coding agent and the LLM API, capturing all traffic and displaying it in a real-time web dashboard. You can see:
