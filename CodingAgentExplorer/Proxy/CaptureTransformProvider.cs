@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -18,190 +18,202 @@ public class CaptureTransformProvider : ITransformProvider
 
     public void Apply(TransformBuilderContext context)
     {
-        context.AddRequestTransform(async requestContext =>
+        context.AddRequestTransform(requestContext
+            => CaptureRequestAsync(requestContext.HttpContext));
+
+        context.AddResponseTransform(CaptureResponseAsync);
+    }
+
+    private static async ValueTask CaptureRequestAsync(HttpContext httpContext)
+    {
+        var request = httpContext.Request;
+
+        // Enable buffering so we can read the body
+        request.EnableBuffering();
+
+        string? body = null;
+        if (request.ContentLength > 0 || request.Headers.ContentType.Count > 0)
         {
-            var httpContext = requestContext.HttpContext;
-            var request = httpContext.Request;
+            request.Body.Position = 0;
+            using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
+            body = await reader.ReadToEndAsync();
+            request.Body.Position = 0;
+        }
 
-            // Enable buffering so we can read the body
-            request.EnableBuffering();
-
-            string? body = null;
-            if (request.ContentLength > 0 || request.Headers.ContentType.Count > 0)
-            {
-                request.Body.Position = 0;
-                using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
-                body = await reader.ReadToEndAsync();
-                request.Body.Position = 0;
-            }
-
-            var proxiedRequest = new ProxiedRequest
-            {
-                Method = request.Method,
-                Path = request.Path + request.QueryString,
-                RequestBody = body
-            };
-
-            // Copy headers (exclude API key for security)
-            foreach (var header in request.Headers)
-            {
-                if (header.Key.Equals("x-api-key", StringComparison.OrdinalIgnoreCase))
-                {
-                    proxiedRequest.RequestHeaders[header.Key] = "[REDACTED]";
-                }
-                else if (header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
-                {
-                    proxiedRequest.RequestHeaders[header.Key] = "[REDACTED]";
-                }
-                else
-                {
-                    proxiedRequest.RequestHeaders[header.Key] = header.Value.ToString();
-                }
-            }
-
-            // Parse request body for metadata
-            if (!string.IsNullOrEmpty(body))
-            {
-                try
-                {
-                    var parsed = JsonSerializer.Deserialize<ClaudeRequestBody>(body);
-                    if (parsed != null)
-                    {
-                        proxiedRequest.Model = parsed.Model;
-                        proxiedRequest.IsStreaming = parsed.Stream ?? false;
-                        proxiedRequest.MaxTokens = parsed.MaxTokens;
-                    }
-                }
-                catch
-                {
-                    // Not a JSON body we care about
-                }
-            }
-
-            httpContext.Items["ProxiedRequest"] = proxiedRequest;
-            httpContext.Items["Stopwatch"] = Stopwatch.StartNew();
-        });
-
-        context.AddResponseTransform(async responseContext =>
+        var proxiedRequest = new ProxiedRequest
         {
-            var httpContext = responseContext.HttpContext;
+            Method = request.Method,
+            Path = request.Path + request.QueryString,
+            RequestBody = body
+        };
 
-            if (httpContext.Items["ProxiedRequest"] is not ProxiedRequest proxiedRequest)
-                return;
-            if (httpContext.Items["Stopwatch"] is not Stopwatch stopwatch)
-                return;
+        CopyHeadersWithRedaction(request.Headers, proxiedRequest.RequestHeaders);
 
-            var store = httpContext.RequestServices.GetRequiredService<RequestStore>();
-            var hubContext = httpContext.RequestServices
-                .GetRequiredService<IHubContext<DashboardHub>>();
-
-            var proxyResponse = responseContext.ProxyResponse;
-            if (proxyResponse == null)
+        // Parse request body for metadata
+        if (!string.IsNullOrEmpty(body))
+        {
+            try
             {
-                stopwatch.Stop();
-                proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
-                proxiedRequest.StatusCode = responseContext.HttpContext.Response.StatusCode;
-                store.Add(proxiedRequest);
-                await hubContext.Clients.All.SendAsync("NewRequest", proxiedRequest);
-                return;
-            }
-
-            proxiedRequest.StatusCode = (int)proxyResponse.StatusCode;
-
-            // Copy response headers
-            foreach (var header in proxyResponse.Headers)
-            {
-                proxiedRequest.ResponseHeaders[header.Key] = string.Join(", ", header.Value);
-            }
-            foreach (var header in proxyResponse.Content.Headers)
-            {
-                proxiedRequest.ResponseHeaders[header.Key] = string.Join(", ", header.Value);
-            }
-
-            var contentType = proxyResponse.Content.Headers.ContentType?.MediaType ?? "";
-            var isEventStream = contentType.Contains("text/event-stream");
-
-            if (isEventStream)
-            {
-                // Streaming SSE: suppress YARP's default body copy, we'll do it manually
-                responseContext.SuppressResponseBody = true;
-
-                var clientResponse = httpContext.Response;
-                clientResponse.ContentType = "text/event-stream";
-                clientResponse.Headers.CacheControl = "no-cache";
-                clientResponse.Headers.Connection = "keep-alive";
-
-                // Copy other response headers to client
-                foreach (var header in proxyResponse.Headers)
+                var parsed = JsonSerializer.Deserialize<ClaudeRequestBody>(body);
+                if (parsed != null)
                 {
-                    if (!clientResponse.Headers.ContainsKey(header.Key))
-                    {
-                        clientResponse.Headers[header.Key] = header.Value.ToArray();
-                    }
+                    proxiedRequest.Model = parsed.Model;
+                    proxiedRequest.IsStreaming = parsed.Stream ?? false;
+                    proxiedRequest.MaxTokens = parsed.MaxTokens;
                 }
+            }
+            catch
+            {
+                // Not a JSON body we care about
+            }
+        }
 
-                var upstreamStream = await proxyResponse.Content.ReadAsStreamAsync();
-                using var streamReader = new StreamReader(upstreamStream, Encoding.UTF8);
-                var clientWriter = clientResponse.Body;
+        httpContext.Items["ProxiedRequest"] = proxiedRequest;
+        httpContext.Items["Stopwatch"] = Stopwatch.StartNew();
+    }
 
-                string? currentEventType = null;
-                bool firstTokenSeen = false;
-
-                string? line;
-                while ((line = await streamReader.ReadLineAsync()) != null)
-                {
-
-                    // Write line to client immediately
-                    var bytes = Encoding.UTF8.GetBytes(line + "\n");
-                    await clientWriter.WriteAsync(bytes);
-                    await clientWriter.FlushAsync();
-
-                    // Parse SSE event
-                    if (line.StartsWith("event: "))
-                    {
-                        currentEventType = line["event: ".Length..];
-                    }
-                    else if (line.StartsWith("data: "))
-                    {
-                        var data = line["data: ".Length..];
-
-                        proxiedRequest.SseEvents.Add(new SseEvent
-                        {
-                            EventType = currentEventType,
-                            Data = data
-                        });
-
-                        ParseSseEventData(proxiedRequest, currentEventType, data,
-                            stopwatch, ref firstTokenSeen);
-                    }
-                    else if (line == "")
-                    {
-                        currentEventType = null;
-                    }
-                }
-
-                stopwatch.Stop();
-                proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
-                store.Add(proxiedRequest);
-                await hubContext.Clients.All.SendAsync("NewRequest", proxiedRequest);
+    private static void CopyHeadersWithRedaction(
+        IHeaderDictionary source, Dictionary<string, string> target)
+    {
+        foreach (var header in source)
+        {
+            if (header.Key.Equals("x-api-key", StringComparison.OrdinalIgnoreCase)
+                || header.Key.Equals("Authorization", StringComparison.OrdinalIgnoreCase))
+            {
+                target[header.Key] = "[REDACTED]";
             }
             else
             {
-                // Non-streaming: buffer the response so both YARP and our capture can read it
-                await proxyResponse.Content.LoadIntoBufferAsync();
-                var body = await ReadResponseBodyAsync(proxyResponse);
-                proxiedRequest.ResponseBody = body;
-
-                stopwatch.Stop();
-                proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
-
-                // Parse non-streaming response
-                ParseNonStreamingResponse(proxiedRequest, body);
-
-                store.Add(proxiedRequest);
-                await hubContext.Clients.All.SendAsync("NewRequest", proxiedRequest);
+                target[header.Key] = header.Value.ToString();
             }
-        });
+        }
+    }
+
+    private static async ValueTask CaptureResponseAsync(ResponseTransformContext responseContext)
+    {
+        var httpContext = responseContext.HttpContext;
+
+        if (httpContext.Items["ProxiedRequest"] is not ProxiedRequest proxiedRequest)
+            return;
+        if (httpContext.Items["Stopwatch"] is not Stopwatch stopwatch)
+            return;
+
+        var store = httpContext.RequestServices.GetRequiredService<RequestStore>();
+        var hubContext = httpContext.RequestServices
+            .GetRequiredService<IHubContext<DashboardHub>>();
+
+        var proxyResponse = responseContext.ProxyResponse;
+        if (proxyResponse == null)
+        {
+            stopwatch.Stop();
+            proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+            proxiedRequest.StatusCode = responseContext.HttpContext.Response.StatusCode;
+            store.Add(proxiedRequest);
+            await hubContext.Clients.All.SendAsync("NewRequest", proxiedRequest);
+            return;
+        }
+
+        proxiedRequest.StatusCode = (int)proxyResponse.StatusCode;
+
+        // Copy response headers
+        foreach (var header in proxyResponse.Headers)
+        {
+            proxiedRequest.ResponseHeaders[header.Key] = string.Join(", ", header.Value);
+        }
+        foreach (var header in proxyResponse.Content.Headers)
+        {
+            proxiedRequest.ResponseHeaders[header.Key] = string.Join(", ", header.Value);
+        }
+
+        var contentType = proxyResponse.Content.Headers.ContentType?.MediaType ?? "";
+        var isEventStream = contentType.Contains("text/event-stream");
+
+        if (isEventStream)
+        {
+            responseContext.SuppressResponseBody = true;
+            await HandleSseStreamingAsync(httpContext, proxyResponse, proxiedRequest, stopwatch);
+        }
+        else
+        {
+            await HandleNonStreamingResponseAsync(proxyResponse, proxiedRequest, stopwatch);
+        }
+
+        store.Add(proxiedRequest);
+        await hubContext.Clients.All.SendAsync("NewRequest", proxiedRequest);
+    }
+
+    private static async Task HandleSseStreamingAsync(
+        HttpContext httpContext, HttpResponseMessage proxyResponse,
+        ProxiedRequest proxiedRequest, Stopwatch stopwatch)
+    {
+        var clientResponse = httpContext.Response;
+        clientResponse.ContentType = "text/event-stream";
+        clientResponse.Headers.CacheControl = "no-cache";
+        clientResponse.Headers.Connection = "keep-alive";
+
+        // Copy other response headers to client
+        foreach (var header in proxyResponse.Headers)
+        {
+            if (!clientResponse.Headers.ContainsKey(header.Key))
+            {
+                clientResponse.Headers[header.Key] = header.Value.ToArray();
+            }
+        }
+
+        var upstreamStream = await proxyResponse.Content.ReadAsStreamAsync();
+        using var streamReader = new StreamReader(upstreamStream, Encoding.UTF8);
+        var clientWriter = clientResponse.Body;
+
+        string? currentEventType = null;
+        bool firstTokenSeen = false;
+
+        string? line;
+        while ((line = await streamReader.ReadLineAsync()) != null)
+        {
+            // Write line to client immediately
+            var bytes = Encoding.UTF8.GetBytes(line + "\n");
+            await clientWriter.WriteAsync(bytes);
+            await clientWriter.FlushAsync();
+
+            // Parse SSE event
+            if (line.StartsWith("event: "))
+            {
+                currentEventType = line["event: ".Length..];
+            }
+            else if (line.StartsWith("data: "))
+            {
+                var data = line["data: ".Length..];
+
+                proxiedRequest.SseEvents.Add(new SseEvent
+                {
+                    EventType = currentEventType,
+                    Data = data
+                });
+
+                ParseSseEventData(proxiedRequest, currentEventType, data,
+                    stopwatch, ref firstTokenSeen);
+            }
+            else if (line == "")
+            {
+                currentEventType = null;
+            }
+        }
+
+        stopwatch.Stop();
+        proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+    }
+
+    private static async Task HandleNonStreamingResponseAsync(
+        HttpResponseMessage proxyResponse, ProxiedRequest proxiedRequest, Stopwatch stopwatch)
+    {
+        await proxyResponse.Content.LoadIntoBufferAsync();
+        var body = await ReadResponseBodyAsync(proxyResponse);
+        proxiedRequest.ResponseBody = body;
+
+        stopwatch.Stop();
+        proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+
+        ParseNonStreamingResponse(proxiedRequest, body);
     }
 
     private static void ParseSseEventData(ProxiedRequest request, string? eventType,

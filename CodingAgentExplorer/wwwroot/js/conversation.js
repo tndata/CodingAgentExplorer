@@ -425,34 +425,8 @@ function buildHistorySection(messages) {
     const wrapper = document.createElement("div");
     wrapper.className = "history-section";
 
-    const userCount = messages.filter(m => (m.role || "user") === "user").length;
-    const assistantCount = messages.filter(m => m.role === "assistant").length;
-    const parts = [];
-    if (userCount > 0) parts.push(`${userCount} user`);
-    if (assistantCount > 0) parts.push(`${assistantCount} assistant`);
-    const summary = parts.join(", ");
-
-    // Estimate character count across all history messages
-    let charCount = 0;
-    for (const msg of messages) {
-        const c = msg.content;
-        if (typeof c === "string") {
-            charCount += c.length;
-        } else if (Array.isArray(c)) {
-            for (const block of c) {
-                if (block.text) charCount += block.text.length;
-                if (block.input) charCount += JSON.stringify(block.input).length;
-                if (block.content) {
-                    if (typeof block.content === "string") charCount += block.content.length;
-                    else if (Array.isArray(block.content)) {
-                        for (const sub of block.content) {
-                            if (sub.text) charCount += sub.text.length;
-                        }
-                    }
-                }
-            }
-        }
-    }
+    const summary = buildRoleSummary(messages);
+    const charCount = estimateMessagesCharCount(messages);
 
     const toggle = document.createElement("button");
     toggle.className = "collapse-toggle";
@@ -479,6 +453,36 @@ function buildHistorySection(messages) {
     wrapper.appendChild(toggle);
     wrapper.appendChild(content);
     return wrapper;
+}
+
+function buildRoleSummary(messages) {
+    const userCount = messages.filter(m => (m.role || "user") === "user").length;
+    const assistantCount = messages.filter(m => m.role === "assistant").length;
+    const parts = [];
+    if (userCount > 0) parts.push(`${userCount} user`);
+    if (assistantCount > 0) parts.push(`${assistantCount} assistant`);
+    return parts.join(", ");
+}
+
+function estimateMessagesCharCount(messages) {
+    let total = 0;
+    for (const msg of messages) {
+        total += estimateContentChars(msg.content);
+    }
+    return total;
+}
+
+function estimateContentChars(content) {
+    if (typeof content === "string") return content.length;
+    if (!Array.isArray(content)) return 0;
+
+    let chars = 0;
+    for (const block of content) {
+        if (block.text) chars += block.text.length;
+        if (block.input) chars += JSON.stringify(block.input).length;
+        if (block.content) chars += estimateContentChars(block.content);
+    }
+    return chars;
 }
 
 // ---------- Message Bubbles ----------
@@ -823,28 +827,9 @@ function computeCharCounts(req) {
     const toolsChars = parsed.tools ? JSON.stringify(parsed.tools).length : 0;
 
     // Message history chars (all messages)
-    let messagesChars = 0;
-    if (parsed.messages) {
-        for (const msg of parsed.messages) {
-            const c = msg.content;
-            if (typeof c === "string") {
-                messagesChars += c.length;
-            } else if (Array.isArray(c)) {
-                for (const block of c) {
-                    if (block.text) messagesChars += block.text.length;
-                    if (block.input) messagesChars += JSON.stringify(block.input).length;
-                    if (block.content) {
-                        if (typeof block.content === "string") messagesChars += block.content.length;
-                        else if (Array.isArray(block.content)) {
-                            for (const sub of block.content) {
-                                if (sub.text) messagesChars += sub.text.length;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    const messagesChars = parsed.messages
+        ? estimateMessagesCharCount(parsed.messages)
+        : 0;
 
     const totalInputChars = systemChars + toolsChars + messagesChars;
 
@@ -941,7 +926,7 @@ function autoScroll() {
 }
 
 function updateCount() {
-    requestCount.textContent = `${requests.length} exchange${requests.length !== 1 ? "s" : ""}`;
+    requestCount.textContent = `${requests.length} exchange${requests.length === 1 ? "" : "s"}`;
 }
 
 function formatTime(ts) {
