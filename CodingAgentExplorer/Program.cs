@@ -44,4 +44,4 @@ app.MapFallbackToFile("index.html").RequireHost("*:5000", "*:5001");
 // YARP reverse proxy (port 8888 only, via Hosts match in appsettings.json)
 app.MapReverseProxy();
 
-app.Run();
+await app.RunAsync();

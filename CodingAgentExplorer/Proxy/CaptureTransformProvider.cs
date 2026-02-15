@@ -152,12 +152,10 @@ public class CaptureTransformProvider : ITransformProvider
         clientResponse.Headers.Connection = "keep-alive";
 
         // Copy other response headers to client
-        foreach (var header in proxyResponse.Headers)
+        foreach (var header in proxyResponse.Headers
+            .Where(header => !clientResponse.Headers.ContainsKey(header.Key)))
         {
-            if (!clientResponse.Headers.ContainsKey(header.Key))
-            {
-                clientResponse.Headers[header.Key] = header.Value.ToArray();
-            }
+            clientResponse.Headers[header.Key] = header.Value.ToArray();
         }
 
         var upstreamStream = await proxyResponse.Content.ReadAsStreamAsync();
@@ -229,21 +227,7 @@ public class CaptureTransformProvider : ITransformProvider
             switch (eventType)
             {
                 case "message_start":
-                    if (root.TryGetProperty("message", out var message))
-                    {
-                        if (message.TryGetProperty("id", out var id))
-                            request.MessageId = id.GetString();
-
-                        if (message.TryGetProperty("usage", out var usage))
-                        {
-                            if (usage.TryGetProperty("input_tokens", out var inputTokens))
-                                request.InputTokens = inputTokens.GetInt32();
-                            if (usage.TryGetProperty("cache_creation_input_tokens", out var cacheCreate))
-                                request.CacheCreationInputTokens = cacheCreate.GetInt32();
-                            if (usage.TryGetProperty("cache_read_input_tokens", out var cacheRead))
-                                request.CacheReadInputTokens = cacheRead.GetInt32();
-                        }
-                    }
+                    ParseMessageStart(request, root);
                     break;
 
                 case "content_block_delta":
@@ -255,22 +239,47 @@ public class CaptureTransformProvider : ITransformProvider
                     break;
 
                 case "message_delta":
-                    if (root.TryGetProperty("delta", out var delta))
-                    {
-                        if (delta.TryGetProperty("stop_reason", out var stopReason))
-                            request.StopReason = stopReason.GetString();
-                    }
-                    if (root.TryGetProperty("usage", out var deltaUsage))
-                    {
-                        if (deltaUsage.TryGetProperty("output_tokens", out var outputTokens))
-                            request.OutputTokens = outputTokens.GetInt32();
-                    }
+                    ParseMessageDelta(request, root);
                     break;
             }
         }
         catch
         {
             // Ignore parse errors in SSE data
+        }
+    }
+
+    private static void ParseMessageStart(ProxiedRequest request, JsonElement root)
+    {
+        if (!root.TryGetProperty("message", out var message))
+            return;
+
+        if (message.TryGetProperty("id", out var id))
+            request.MessageId = id.GetString();
+
+        if (!message.TryGetProperty("usage", out var usage))
+            return;
+
+        if (usage.TryGetProperty("input_tokens", out var inputTokens))
+            request.InputTokens = inputTokens.GetInt32();
+        if (usage.TryGetProperty("cache_creation_input_tokens", out var cacheCreate))
+            request.CacheCreationInputTokens = cacheCreate.GetInt32();
+        if (usage.TryGetProperty("cache_read_input_tokens", out var cacheRead))
+            request.CacheReadInputTokens = cacheRead.GetInt32();
+    }
+
+    private static void ParseMessageDelta(ProxiedRequest request, JsonElement root)
+    {
+        if (root.TryGetProperty("delta", out var delta)
+            && delta.TryGetProperty("stop_reason", out var stopReason))
+        {
+            request.StopReason = stopReason.GetString();
+        }
+
+        if (root.TryGetProperty("usage", out var deltaUsage)
+            && deltaUsage.TryGetProperty("output_tokens", out var outputTokens))
+        {
+            request.OutputTokens = outputTokens.GetInt32();
         }
     }
 
