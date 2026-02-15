@@ -79,8 +79,7 @@ function renderTable() {
     const fragment = document.createDocumentFragment();
 
     // Show oldest first (newest at bottom)
-    for (let i = 0; i < requests.length; i++) {
-        const req = requests[i];
+    for (const req of requests) {
         const tr = document.createElement("tr");
         if (req.id === selectedId) tr.classList.add("selected");
 
@@ -113,7 +112,7 @@ function renderTable() {
 }
 
 function updateCount() {
-    requestCount.textContent = `${requests.length} request${requests.length !== 1 ? "s" : ""}`;
+    requestCount.textContent = `${requests.length} request${requests.length === 1 ? "" : "s"}`;
 }
 
 // Detail panel

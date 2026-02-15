@@ -35,7 +35,10 @@ public class RequestStore
 
     public void Clear()
     {
-        while (_requests.TryDequeue(out _)) { }
+        while (_requests.TryDequeue(out _))
+        {
+            // Intentionally empty — drain the queue
+        }
     }
 
     public int Count => _requests.Count;
