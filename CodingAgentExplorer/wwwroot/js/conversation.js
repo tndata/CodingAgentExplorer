@@ -4,6 +4,8 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 let requests = [];
+let hookEvents = [];
+let showHookEvents = true;
 
 // DOM
 const feed = document.getElementById("conversationFeed");
@@ -32,9 +34,25 @@ connection.on("History", (history) => {
     updateCount();
 });
 
+// Receive hook history
+connection.on("HookHistory", (history) => {
+    hookEvents = history;
+    renderFeed();
+    updateCount();
+});
+
+// Receive new hook event
+connection.on("NewHookEvent", (evt) => {
+    hookEvents.push(evt);
+    insertHookEventInTimeline(evt);
+    updateCount();
+    autoScroll();
+});
+
 // Receive clear
 connection.on("Cleared", () => {
     requests = [];
+    hookEvents = [];
     renderFeed();
     updateCount();
 });
@@ -43,6 +61,10 @@ connection.on("Cleared", () => {
 document.getElementById("clearBtn").addEventListener("click", () => {
     connection.invoke("ClearAll").catch(err => console.error("Clear failed:", err));
 });
+
+// Hook events checkbox
+const hookCb = document.getElementById("showHookEvents");
+hookCb.addEventListener("change", () => { showHookEvents = hookCb.checked; renderFeed(); });
 
 // Receive new request
 connection.on("NewRequest", (req) => {
@@ -74,12 +96,21 @@ connection.start().then(() => {
 
 function renderFeed() {
     feed.innerHTML = "";
-    if (requests.length === 0) {
+    const items = [
+        ...requests.map(r => ({ kind: "request", ts: new Date(r.timestamp), data: r })),
+        ...(showHookEvents ? hookEvents.map(e => ({ kind: "hook", ts: new Date(e.timestamp), data: e })) : []),
+    ].sort((a, b) => a.ts - b.ts);
+
+    if (items.length === 0) {
         feed.innerHTML = '<p class="empty-state">Waiting for API requests...</p>';
         return;
     }
-    for (const req of requests) {
-        appendExchange(req);
+    for (const item of items) {
+        if (item.kind === "request") {
+            feed.appendChild(buildExchangeElement(item.data));
+        } else {
+            feed.appendChild(buildHookEventElement(item.data));
+        }
     }
     autoScroll();
 }
@@ -89,13 +120,31 @@ function appendExchange(req) {
     const empty = feed.querySelector(".empty-state");
     if (empty) empty.remove();
 
-    feed.appendChild(buildExchangeElement(req));
+    const el = buildExchangeElement(req);
+    const reqMs = new Date(req.timestamp).getTime();
+    const insertBefore = Array.from(feed.children).find(card =>
+        card.dataset.timestamp && parseInt(card.dataset.timestamp) > reqMs
+    );
+    insertBefore ? feed.insertBefore(el, insertBefore) : feed.appendChild(el);
+}
+
+function insertHookEventInTimeline(evt) {
+    if (!showHookEvents) return;
+    const empty = feed.querySelector(".empty-state");
+    if (empty) empty.remove();
+    const el = buildHookEventElement(evt);
+    const evtMs = new Date(evt.timestamp).getTime();
+    const insertBefore = Array.from(feed.children).find(card =>
+        card.dataset.timestamp && parseInt(card.dataset.timestamp) > evtMs
+    );
+    insertBefore ? feed.insertBefore(el, insertBefore) : feed.appendChild(el);
 }
 
 function buildExchangeElement(req) {
     const el = document.createElement("div");
     el.className = "exchange";
     el.dataset.id = req.id;
+    el.dataset.timestamp = new Date(req.timestamp).getTime();
 
     // 1. Meta bar
     el.appendChild(buildMetaBar(req));
@@ -926,7 +975,138 @@ function autoScroll() {
 }
 
 function updateCount() {
-    requestCount.textContent = `${requests.length} exchange${requests.length === 1 ? "" : "s"}`;
+    const label = requests.length === 1 ? "exchange" : "exchanges";
+    requestCount.textContent = `${requests.length} ${label}` +
+        (hookEvents.length > 0 ? `, ${hookEvents.length} hook${hookEvents.length === 1 ? "" : "s"}` : "");
+}
+
+// ---------- Hook Event Cards ----------
+
+function hookEventContext(evt) {
+    const input = evt.hookInput || {};
+    switch ((evt.hookEventName || "").toLowerCase()) {
+        case "pretooluse":
+        case "posttooluse":
+        case "posttoolusefailure":  return input.tool_name  ? { label: "tool",   value: input.tool_name }         : null;
+        case "sessionstart":        return input.source     ? { label: "source", value: input.source }             : null;
+        case "sessionend":          return input.reason     ? { label: "reason", value: input.reason }             : null;
+        case "subagentstart":
+        case "subagentstopp":       return input.agent_type ? { label: "agent",  value: input.agent_type }         : null;
+        case "notification":        return input.notification_type ? { label: "type", value: input.notification_type } : null;
+        default:                    return null;
+    }
+}
+
+function buildHookEventElement(evt) {
+    const el = document.createElement("div");
+    el.className = "hook-event";
+    el.dataset.id = evt.id;
+    el.dataset.timestamp = new Date(evt.timestamp).getTime();
+
+    const context = hookEventContext(evt);
+    const header = document.createElement("div");
+    header.className = "hook-event-header expanded";
+    header.innerHTML = `
+        <span class="hook-badge hook-badge-${esc((evt.hookEventName || "").toLowerCase())}">${esc(evt.hookEventName)}</span>
+        <span class="hook-meta">${esc(formatTime(evt.timestamp))}${context ? " | " + esc(context.label) + ": " + esc(context.value) : ""}</span>
+    `;
+
+    const body = document.createElement("div");
+    body.className = "hook-event-body open";
+    renderHookEventBody(body, evt);
+
+    header.addEventListener("click", () => {
+        header.classList.toggle("expanded");
+        body.classList.toggle("open");
+    });
+
+    el.appendChild(header);
+    el.appendChild(body);
+    return el;
+}
+
+function renderHookEventBody(container, evt) {
+    // Key-value field grid (stdout handled separately below)
+    const fields = [
+        ["Event", evt.hookEventName], ["Session", evt.sessionId],
+        ["CWD", evt.cwd], ["Permission", evt.permissionMode],
+        ["Transcript", evt.transcriptPath], ["Exit Code", String(evt.exitCode)],
+    ].filter(([, v]) => v != null && v !== "" && v !== "0");
+
+    if (fields.length > 0) {
+        const dl = document.createElement("dl");
+        dl.className = "hook-field-grid";
+        for (const [key, val] of fields) {
+            const dt = document.createElement("dt");
+            dt.textContent = key;
+            const dd = document.createElement("dd");
+            dd.textContent = val;
+            dl.appendChild(dt);
+            dl.appendChild(dd);
+        }
+        container.appendChild(dl);
+    }
+
+    // Stdout — rendered as a distinct terminal-style output box
+    if (evt.stdout && evt.stdout.trim()) {
+        const stdoutWrapper = document.createElement("div");
+        stdoutWrapper.className = "hook-stdout";
+        const label = document.createElement("span");
+        label.className = "hook-stdout-label";
+        label.textContent = "Stdout";
+        const pre = document.createElement("pre");
+        pre.className = "hook-stdout-value";
+        pre.textContent = evt.stdout.trim();
+        stdoutWrapper.appendChild(label);
+        stdoutWrapper.appendChild(pre);
+        container.appendChild(stdoutWrapper);
+    }
+
+    // Collapsible: Environment Variables
+    const envEntries = Object.entries(evt.environmentVariables || {});
+    if (envEntries.length > 0) {
+        const envToggle = document.createElement("button");
+        envToggle.className = "collapse-toggle";
+        envToggle.innerHTML = `<span class="arrow">&#9654;</span> Environment Variables (${envEntries.length})`;
+        const envContent = document.createElement("div");
+        envContent.className = "collapsible-content";
+        const envDl = document.createElement("dl");
+        envDl.className = "hook-field-grid";
+        for (const [k, v] of envEntries) {
+            const dt = document.createElement("dt");
+            dt.textContent = k;
+            const dd = document.createElement("dd");
+            dd.textContent = v;
+            envDl.appendChild(dt);
+            envDl.appendChild(dd);
+        }
+        envContent.appendChild(envDl);
+        envToggle.addEventListener("click", () => {
+            envToggle.classList.toggle("expanded");
+            envContent.classList.toggle("open");
+        });
+        container.appendChild(envToggle);
+        container.appendChild(envContent);
+    }
+
+    // Collapsible: Raw Hook Input
+    if (evt.hookInput != null) {
+        const rawToggle = document.createElement("button");
+        rawToggle.className = "collapse-toggle";
+        rawToggle.innerHTML = `<span class="arrow">&#9654;</span> Raw Hook Input`;
+        const rawContent = document.createElement("div");
+        rawContent.className = "collapsible-content";
+        const pre = document.createElement("pre");
+        pre.className = "detail-code";
+        pre.textContent = JSON.stringify(evt.hookInput, null, 2);
+        rawContent.appendChild(pre);
+        rawToggle.addEventListener("click", () => {
+            rawToggle.classList.toggle("expanded");
+            rawContent.classList.toggle("open");
+        });
+        container.appendChild(rawToggle);
+        container.appendChild(rawContent);
+    }
 }
 
 function formatTime(ts) {

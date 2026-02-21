@@ -16,6 +16,16 @@ dotnet build
 dotnet run
 ```
 
+## Publish
+
+```bat
+publish.bat
+```
+
+Outputs to `Published/` (gitignored):
+- `Published\CodingAgentExplorer\` — framework-dependent, requires .NET 10 runtime
+- `Published\HookAgent\HookAgent.exe` — single-file, win-x64, framework-dependent
+
 ## Usage with Claude Code
 
 Set the API base URL to point at the proxy:
@@ -29,11 +39,18 @@ Then use Claude Code normally. All requests flow through the proxy and appear on
 ## Project Structure
 
 - `Program.cs` - App setup: YARP, SignalR, dual-port Kestrel
-- `Models/` - DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent
+- `Models/` - DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent, HookEvent
 - `Services/RequestStore.cs` - In-memory circular buffer (ConcurrentQueue, max 1000)
+- `Services/HookEventStore.cs` - In-memory store for hook events
 - `Proxy/CaptureTransformProvider.cs` - YARP ITransformProvider for request/response capture
 - `Hubs/DashboardHub.cs` - SignalR hub for real-time dashboard updates
 - `wwwroot/` - Dashboard SPA (vanilla HTML/JS/CSS + SignalR client)
+- `HookAgent/` - Single-file CLI tool used as a Claude Code hook command
+- `publish.bat` - Publishes both projects to `Published/`
+
+## Writing Style
+
+- Never use em dashes (—) in README.md or any documentation. Use a comma, hyphen, colon, or reword the sentence instead.
 
 ## Key Design Decisions
 

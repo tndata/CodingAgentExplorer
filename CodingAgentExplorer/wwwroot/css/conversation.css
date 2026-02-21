@@ -697,3 +697,180 @@ main {
 
 .token-grid dt { color: var(--text-secondary); }
 .token-grid dd { color: var(--text); }
+
+/* Hook Event Cards (orange left-border to distinguish from exchange cards) */
+.hook-event {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--orange);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.hook-event-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-radius: 7px 7px 0 0;
+    user-select: none;
+}
+
+.hook-event-header:hover { background: var(--bg-tertiary); }
+.hook-event-header.expanded { border-bottom: 1px solid var(--border); }
+
+.hook-event-body {
+    display: none;
+    padding: 12px 16px;
+    background: var(--bg);
+    border-radius: 0 0 7px 7px;
+}
+
+.hook-event-body.open {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hook-badge {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--orange);
+    border: 1px solid rgba(210, 153, 34, 0.3);
+    white-space: nowrap;
+}
+
+/* Per-event color overrides */
+.hook-badge-sessionstart,
+.hook-badge-sessionend {
+    background: rgba(88, 166, 255, 0.12);
+    color: var(--accent);
+    border-color: rgba(88, 166, 255, 0.3);
+}
+
+.hook-badge-stop {
+    background: rgba(248, 81, 73, 0.12);
+    color: var(--red);
+    border-color: rgba(248, 81, 73, 0.3);
+}
+
+.hook-badge-taskcompleted,
+.hook-badge-subagentstart,
+.hook-badge-subagentstopp {
+    background: rgba(63, 185, 80, 0.12);
+    color: var(--green);
+    border-color: rgba(63, 185, 80, 0.3);
+}
+
+.hook-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hook-field-grid {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 3px 10px;
+    font-size: 12px;
+}
+
+.hook-field-grid dt {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.hook-field-grid dd {
+    color: var(--text);
+    word-break: break-all;
+    margin: 0;
+}
+
+.hook-event-body .collapse-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.hook-event-body .collapse-toggle:hover { color: var(--text); }
+
+.hook-event-body .collapse-toggle .arrow {
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.hook-event-body .collapse-toggle.expanded .arrow {
+    transform: rotate(90deg);
+}
+
+.hook-event-body .collapsible-content {
+    display: none;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.hook-event-body .collapsible-content.open {
+    display: block;
+}
+
+/* Stdout output box inside hook event body */
+.hook-stdout {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.hook-stdout-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.hook-stdout-value {
+    margin: 0;
+    padding: 6px 10px;
+    background: rgba(63, 185, 80, 0.07);
+    border: 1px solid rgba(63, 185, 80, 0.25);
+    border-left: 3px solid var(--green);
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    color: var(--green);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.hook-events-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.hook-events-toggle input[type="checkbox"] {
+    accent-color: var(--orange);
+    cursor: pointer;
+}

@@ -75,6 +75,89 @@ Navigate to [https://localhost:5001](https://localhost:5001) in your browser (op
 - **HTTP Inspector** - Table view of all proxied requests with headers, bodies, SSE events, and timing details
 - **Conversation View** - Chat-style display showing messages, tool use, and responses
 
+## Publishing
+
+Run `publish.bat` from the repo root to build release artifacts into `Published/` (gitignored):
+
+```bat
+publish.bat
+```
+
+| Output | Description |
+|--------|-------------|
+| `Published\CodingAgentExplorer\` | Proxy + dashboard (exe, wwwroot, appsettings.json) |
+| `Published\HookAgent\HookAgent.exe` | Single-file Claude Code hook command (win-x64) |
+
+Both require the .NET 10 runtime on the target machine. Add `Published\HookAgent` to your `PATH` to use `HookAgent` as a Claude Code hook command.
+
+## HookAgent
+
+HookAgent is a small companion CLI tool that acts as a [Claude Code hook](https://docs.anthropic.com/en/docs/claude-code/hooks) command. It bridges Claude Code's hook system and the CodingAgentExplorer dashboard, letting you see every hook event (session start/end, tool calls, permission requests, notifications, and more) appear in the conversation view in real time.
+
+### How it works
+
+Claude Code invokes hook commands by writing a JSON payload to **stdin** and reading the exit code and stdout/stderr on completion. HookAgent:
+
+1. Reads the JSON payload from stdin
+2. Collects Claude Code environment variables (`CLAUDE_PROJECT_DIR`, `CLAUDE_ENV_FILE`, etc.)
+3. POSTs everything to the dashboard at `http://localhost:5000/api/hook-event`
+4. Relays the server's `exitCode`, `stdout`, and `stderr` back to Claude Code
+5. Exits silently with code 0 if the dashboard is not running, so it never blocks Claude Code
+
+### Setup for a workshop / demo
+
+**Step 1:** Run `publish.bat` to build `Published/HookAgent/HookAgent.exe`.
+
+**Step 2:** Copy the `HookAgent/` folder into the working directory where students will run `claude`:
+
+```
+C:\Conf\
+  HookAgent\
+    HookAgent.exe
+  .claude\
+    settings.json    ← copied from sample-settings.json in this repo
+```
+
+**Step 3:** Copy `sample-settings.json` from the repo root to `.claude\settings.json` in the working directory. This file registers HookAgent for all 15 Claude Code hook events.
+
+**Step 4:** Start CodingAgentExplorer, then run `claude` from the working directory. Hook events appear in the Conversation View alongside API requests.
+
+> **Note:** Claude Code runs hook commands through **bash** on all platforms (including Windows). Use forward slashes in the command path: `HookAgent/HookAgent.exe`.
+
+### Verify it works
+
+Test HookAgent manually before starting a Claude Code session:
+
+```bash
+echo '{"hook_event_name":"UserPromptSubmit","session_id":"test"}' | HookAgent/HookAgent.exe
+```
+
+If the dashboard is running, a `UserPromptSubmit` event appears in the Conversation View immediately. If the dashboard is not running, the command exits silently with code 0.
+
+### Example
+
+<img src="docs/images/coding-agent-explorer-hook-events.png" alt="Hook Events in Conversation View" width="800">
+
+Hook events appear inline in the Conversation View, interleaved with API requests in chronological order. Each event shows the event type, timestamp, session, and any stdout returned by the dashboard.
+
+### Hook events captured
+
+| Event | When it fires |
+|---|---|
+| `SessionStart` | Claude Code session begins or resumes |
+| `UserPromptSubmit` | User submits a prompt |
+| `PreToolUse` | Before any tool call executes |
+| `PostToolUse` | After a tool call succeeds |
+| `PostToolUseFailure` | After a tool call fails |
+| `PermissionRequest` | When Claude Code asks for permission |
+| `Stop` | Claude finishes responding |
+| `SubagentStart` / `SubagentStop` | A subagent is spawned or finishes |
+| `Notification` | Claude Code sends a notification |
+| `PreCompact` | Before context compaction |
+| `ConfigChange` | A settings file changes during the session |
+| `TeammateIdle` / `TaskCompleted` | Agent team events |
+| `SessionEnd` | Session terminates |
+
 ## Architecture
 
 ```
@@ -93,17 +176,21 @@ Navigate to [https://localhost:5001](https://localhost:5001) in your browser (op
 ## Project Structure
 
 ```
-├── Program.cs                          # App setup: YARP, SignalR, dual-port Kestrel
-├── Models/                             # DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent
-├── Services/RequestStore.cs            # In-memory circular buffer (max 1000 requests)
-├── Proxy/CaptureTransformProvider.cs   # YARP ITransformProvider for request/response capture
-├── Hubs/DashboardHub.cs                # SignalR hub for real-time dashboard updates
-└── wwwroot/                            # Dashboard SPA (vanilla HTML/JS/CSS)
-    ├── index.html                      # Landing page with view selection
-    ├── inspector/                      # HTTP Inspector view
-    ├── conversation/                   # Conversation view
-    ├── css/                            # Stylesheets
-    └── js/                             # Dashboard and conversation scripts
+├── publish.bat                         # Publishes both projects to Published/
+├── CodingAgentExplorer/
+│   ├── Program.cs                      # App setup: YARP, SignalR, dual-port Kestrel
+│   ├── Models/                         # DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent, HookEvent
+│   ├── Services/RequestStore.cs        # In-memory circular buffer (max 1000 requests)
+│   ├── Services/HookEventStore.cs      # In-memory store for hook events
+│   ├── Proxy/CaptureTransformProvider.cs  # YARP ITransformProvider for request/response capture
+│   ├── Hubs/DashboardHub.cs            # SignalR hub for real-time dashboard updates
+│   └── wwwroot/                        # Dashboard SPA (vanilla HTML/JS/CSS)
+│       ├── index.html                  # Landing page with view selection
+│       ├── inspector/                  # HTTP Inspector view
+│       ├── conversation/               # Conversation view
+│       ├── css/                        # Stylesheets
+│       └── js/                         # Dashboard and conversation scripts
+└── HookAgent/                          # Single-file CLI tool for Claude Code hooks
 ```
 
 

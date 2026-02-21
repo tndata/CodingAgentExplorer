@@ -6,6 +6,9 @@
 # Claude Code local settings
 .claude/
 
+# Published output (dotnet publish artifacts)
+Published/
+
 # User-specific files
 *.rsuser
 *.suo
