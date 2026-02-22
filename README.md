@@ -96,6 +96,8 @@ HookAgent is a small companion CLI tool that acts as a [Claude Code hook](https:
 
 ### How it works
 
+<img src="docs/images/coding-agent-HookAgent.png" alt="HookAgent architecture diagram" width="700">
+
 Claude Code invokes hook commands by writing a JSON payload to **stdin** and reading the exit code and stdout/stderr on completion. HookAgent:
 
 1. Reads the JSON payload from stdin
