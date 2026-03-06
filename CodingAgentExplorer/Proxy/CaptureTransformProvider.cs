@@ -18,6 +18,13 @@ public class CaptureTransformProvider : ITransformProvider
 
     public void Apply(TransformBuilderContext context)
     {
+        // Strip Accept-Encoding so Anthropic always returns uncompressed responses.
+        // YARP's HttpClient has auto-decompression disabled (standard for proxies), so
+        // compressed responses would reach Claude Code's Bun runtime as raw bytes.
+        // Bun has a known zlib decompression bug (github.com/anthropics/claude-code/issues/18302)
+        // that causes "Decompression error: ZlibError" in this scenario.
+        context.AddRequestHeaderRemove("Accept-Encoding");
+
         context.AddRequestTransform(requestContext
             => CaptureRequestAsync(requestContext.HttpContext));
 
@@ -146,10 +153,25 @@ public class CaptureTransformProvider : ITransformProvider
         HttpContext httpContext, HttpResponseMessage proxyResponse,
         ProxiedRequest proxiedRequest, Stopwatch stopwatch)
     {
+        var logger = httpContext.RequestServices
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger<CaptureTransformProvider>();
+
         var clientResponse = httpContext.Response;
         clientResponse.ContentType = "text/event-stream";
         clientResponse.Headers.CacheControl = "no-cache";
         clientResponse.Headers.Connection = "keep-alive";
+
+        // Log any unexpected Content-Encoding (should be empty after stripping Accept-Encoding)
+        var contentEncoding = proxyResponse.Content.Headers.ContentEncoding.FirstOrDefault();
+        if (!string.IsNullOrEmpty(contentEncoding))
+        {
+            logger.LogWarning(
+                "SSE response has Content-Encoding: {Encoding} — forwarding may be corrupted. " +
+                "Ensure Accept-Encoding is stripped from outgoing requests.",
+                contentEncoding);
+            proxiedRequest.Error = $"Unexpected Content-Encoding on SSE stream: {contentEncoding}";
+        }
 
         // Copy other response headers to client
         foreach (var header in proxyResponse.Headers
@@ -165,36 +187,44 @@ public class CaptureTransformProvider : ITransformProvider
         string? currentEventType = null;
         bool firstTokenSeen = false;
 
-        string? line;
-        while ((line = await streamReader.ReadLineAsync()) != null)
+        try
         {
-            // Write line to client immediately
-            var bytes = Encoding.UTF8.GetBytes(line + "\n");
-            await clientWriter.WriteAsync(bytes);
-            await clientWriter.FlushAsync();
-
-            // Parse SSE event
-            if (line.StartsWith("event: "))
+            string? line;
+            while ((line = await streamReader.ReadLineAsync()) != null)
             {
-                currentEventType = line["event: ".Length..];
-            }
-            else if (line.StartsWith("data: "))
-            {
-                var data = line["data: ".Length..];
+                // Write line to client immediately
+                var bytes = Encoding.UTF8.GetBytes(line + "\n");
+                await clientWriter.WriteAsync(bytes);
+                await clientWriter.FlushAsync();
 
-                proxiedRequest.SseEvents.Add(new SseEvent
+                // Parse SSE event
+                if (line.StartsWith("event: "))
                 {
-                    EventType = currentEventType,
-                    Data = data
-                });
+                    currentEventType = line["event: ".Length..];
+                }
+                else if (line.StartsWith("data: "))
+                {
+                    var data = line["data: ".Length..];
 
-                ParseSseEventData(proxiedRequest, currentEventType, data,
-                    stopwatch, ref firstTokenSeen);
+                    proxiedRequest.SseEvents.Add(new SseEvent
+                    {
+                        EventType = currentEventType,
+                        Data = data
+                    });
+
+                    ParseSseEventData(proxiedRequest, currentEventType, data,
+                        stopwatch, ref firstTokenSeen);
+                }
+                else if (line == "")
+                {
+                    currentEventType = null;
+                }
             }
-            else if (line == "")
-            {
-                currentEventType = null;
-            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "SSE stream error for {Path}", proxiedRequest.Path);
+            proxiedRequest.Error = $"SSE stream error: {ex.GetType().Name}: {ex.Message}";
         }
 
         stopwatch.Stop();

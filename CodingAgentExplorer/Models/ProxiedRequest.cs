@@ -35,4 +35,7 @@ public class ProxiedRequest
     // Timing
     public double? DurationMs { get; set; }
     public double? TimeToFirstTokenMs { get; set; }
+
+    // Error (proxy-level, not HTTP status)
+    public string? Error { get; set; }
 }

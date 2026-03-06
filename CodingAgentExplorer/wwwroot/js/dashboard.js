@@ -219,6 +219,7 @@ function renderOverview(req) {
                 <dt>TTFT</dt><dd>${formatDuration(req.timeToFirstTokenMs)}</dd>
                 <dt>Message ID</dt><dd>${esc(req.messageId || "-")}</dd>
                 <dt>Stop Reason</dt><dd>${esc(req.stopReason || "-")}</dd>
+                ${req.error ? `<dt>Error</dt><dd style="color:var(--red,#e74c3c)">${esc(req.error)}</dd>` : ""}
             </dl>
         </div>`;
 }
