@@ -155,18 +155,30 @@ claude mcp remove mcp_proxy
 
 ## Publishing
 
-Run `publish.bat` from the repo root to build release artifacts into `Published/` (gitignored):
+Run the publish script from the repo root to build release artifacts into `Published/` (gitignored):
 
+**Windows:**
 ```bat
 publish.bat
 ```
 
+**macOS / Linux:**
+```bash
+bash publish.sh
+```
+
+`publish.bat` builds HookAgent for Windows (win-x64) only. `publish.sh` builds HookAgent for all four platforms in one pass.
+
 | Output | Description |
 |--------|-------------|
 | `Published\CodingAgentExplorer\` | Proxy + dashboard (exe, wwwroot, appsettings.json) |
-| `Published\HookAgent\HookAgent.exe` | Single-file Claude Code hook command (win-x64) |
+| `Published\HookAgent\HookAgent.exe` | Single-file Claude Code hook command (win-x64, from publish.bat) |
+| `Published\HookAgent-win-x64\HookAgent.exe` | win-x64 (from publish.sh) |
+| `Published\HookAgent-linux-x64\HookAgent` | linux-x64 (from publish.sh) |
+| `Published\HookAgent-osx-arm64\HookAgent` | macOS Apple Silicon (from publish.sh) |
+| `Published\HookAgent-osx-x64\HookAgent` | macOS Intel (from publish.sh) |
 
-Both require the .NET 10 runtime on the target machine. Add `Published\HookAgent` to your `PATH` to use `HookAgent` as a Claude Code hook command.
+All outputs require the .NET 10 runtime on the target machine. Add the appropriate `HookAgent` directory to your `PATH` to use `HookAgent` as a Claude Code hook command.
 
 ## HookAgent
 
@@ -186,7 +198,7 @@ Claude Code invokes hook commands by writing a JSON payload to **stdin** and rea
 
 ### Setup for a workshop / demo
 
-**Step 1:** Run `publish.bat` to build `Published/HookAgent/HookAgent.exe`.
+**Step 1:** Run `publish.bat` (Windows) or `bash publish.sh` (macOS/Linux) to build the HookAgent binary for your platform.
 
 **Step 2:** Copy the `HookAgent/` folder into the working directory where students will run `claude`:
 
@@ -256,7 +268,8 @@ Hook events appear inline in the Conversation View, interleaved with API request
 ## Project Structure
 
 ```
-├── publish.bat                         # Publishes both projects to Published/
+├── publish.bat                         # Publishes both projects to Published/ (Windows, win-x64)
+├── publish.sh                          # Publishes both projects to Published/ (all platforms)
 ├── CodingAgentExplorer/
 │   ├── Program.cs                      # App setup: YARP, SignalR, dual-port Kestrel
 │   ├── Models/                         # DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent, HookEvent
