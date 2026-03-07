@@ -37,43 +37,121 @@ Coding Agent Explorer sits between your coding agent and the LLM API, capturing 
 
 ## Getting Started
 
-### 1. Build and run the proxy
+### 1. Install .NET 10 SDK
+
+Download and install the [.NET 10 SDK](https://dotnet.microsoft.com/download) if you do not already have it.
+
+### 2. Clone the repository
+
+```bash
+git clone https://github.com/tndata/CodingAgentExplorer.git
+cd CodingAgentExplorer
+```
+
+### 3. Build and run
 
 ```bash
 dotnet build
-dotnet run
+dotnet run --project CodingAgentExplorer
 ```
 
-This starts three endpoints:
+This starts four endpoints:
 - **Port 8888** - The reverse proxy (HTTP, point your coding agent here)
+- **Port 9999** - The MCP proxy (HTTP, used by the MCP Observer)
 - **Port 5000** - The web dashboard (HTTP)
 - **Port 5001** - The web dashboard (HTTPS, auto-launches in browser)
 
-### 2. Configure your coding agent
+### 4. Configure your coding agent
 
-For **Claude Code**, set the API base URL to point at the proxy:
+For **Claude Code**, set the `ANTHROPIC_BASE_URL` environment variable to point at the proxy.
+
+**Linux / macOS - source the script so the variable is set in your current shell:**
 
 ```bash
-# Linux / macOS
-export ANTHROPIC_BASE_URL=http://localhost:8888
-
-# Windows (cmd)
-set ANTHROPIC_BASE_URL=http://localhost:8888
-
-# Windows (PowerShell)
-$env:ANTHROPIC_BASE_URL = "http://localhost:8888"
+source EnableProxy.sh
 ```
 
-On Windows, you can also run `EnableProxy.bat` from the repo root to quickly set the variable. Run `DisableProxy.bat` to clear it. Both scripts only affect the current cmd session -- the variable is not persisted, so closing the terminal automatically clears it.
+Run `source DisableProxy.sh` to clear it when you are done.
+
+**Windows (cmd):**
+
+```bat
+EnableProxy.bat
+```
+
+Run `DisableProxy.bat` to clear it.
+
+**Windows (PowerShell):**
+
+```powershell
+# Enable
+$env:ANTHROPIC_BASE_URL = "http://localhost:8888"
+
+# Disable
+Remove-Item Env:ANTHROPIC_BASE_URL
+```
+
+All scripts only affect the current terminal session. The variable is not persisted, so closing the terminal automatically clears it.
 
 Then use Claude Code as you normally would.
 
-### 3. Open the dashboard
+### 5. Open the dashboard
 
-Navigate to [https://localhost:5001](https://localhost:5001) in your browser (opens automatically on `dotnet run`). You'll see two views:
+Navigate to [https://localhost:5001](https://localhost:5001) in your browser. On Windows the browser opens automatically on `dotnet run`. On macOS and Linux, open it manually.
+
+You will see three views:
 
 - **HTTP Inspector** - Table view of all proxied requests with headers, bodies, SSE events, and timing details
 - **Conversation View** - Chat-style display showing messages, tool use, and responses
+- **MCP Observer** - Dedicated view for inspecting MCP server traffic (see below)
+
+## MCP Observer
+
+The MCP Observer lets you intercept and inspect traffic between Claude Code and any [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. It acts as a transparent proxy on port 9999, sitting between Claude Code and the real MCP server.
+
+```
+Claude Code  --►  MCP Observer (port 9999)  --►  Real MCP Server
+                         |
+                         ▼
+                  Dashboard (port 5000/5001)
+```
+
+### What it shows
+
+- Every MCP request and response in real time, sorted chronologically
+- The JSON-RPC method for each request (`initialize`, `tools/list`, `tools/call`, etc.)
+- For `tools/call`, the specific tool name is shown inline, e.g. `tools/call (query-docs)`
+- A Pretty view that renders responses in a readable format per method type:
+  - `tools/list` - one card per tool with name, description, and parameters
+  - `initialize` - protocol version, server name, and capabilities
+  - `tools/call` - the returned content rendered directly
+- A Raw view with pretty-printed JSON for all other responses
+- Request and response bodies side by side
+
+### Setup
+
+**Step 1:** Open the MCP Observer at [https://localhost:5001/mcp/index.html](https://localhost:5001/mcp/index.html).
+
+**Step 2:** Enter the URL of the real MCP server in the destination field and click Set.
+
+**Step 3:** Register the proxy as an MCP server in Claude Code:
+
+```bash
+claude mcp add --transport http mcp_proxy http://localhost:9999
+```
+
+Claude Code will now route all MCP traffic through the observer. To remove it later:
+
+```bash
+claude mcp remove mcp_proxy
+```
+
+### Sample MCP services to try
+
+| Service | URL | Sample prompt |
+|---------|-----|---------------|
+| Microsoft Learn | `https://learn.microsoft.com/api/mcp` | "How do I create an Azure Container App using az cli?" |
+| Context7 | `https://mcp.context7.com/mcp` | "How do I set up middleware in Next.js 15? use context7" |
 
 ## Publishing
 
@@ -184,12 +262,16 @@ Hook events appear inline in the Conversation View, interleaved with API request
 │   ├── Models/                         # DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent, HookEvent
 │   ├── Services/RequestStore.cs        # In-memory circular buffer (max 1000 requests)
 │   ├── Services/HookEventStore.cs      # In-memory store for hook events
+│   ├── Services/McpRequestStore.cs     # In-memory store for MCP requests
+│   ├── Services/McpProxyConfig.cs      # Holds the configured MCP destination URL
 │   ├── Proxy/CaptureTransformProvider.cs  # YARP ITransformProvider for request/response capture
+│   ├── Proxy/DynamicProxyConfigProvider.cs # Dynamic YARP config for Claude (8888) and MCP (9999) routes
 │   ├── Hubs/DashboardHub.cs            # SignalR hub for real-time dashboard updates
 │   └── wwwroot/                        # Dashboard SPA (vanilla HTML/JS/CSS)
 │       ├── index.html                  # Landing page with view selection
 │       ├── inspector/                  # HTTP Inspector view
 │       ├── conversation/               # Conversation view
+│       ├── mcp/                        # MCP Observer view
 │       ├── css/                        # Stylesheets
 │       └── js/                         # Dashboard and conversation scripts
 └── HookAgent/                          # Single-file CLI tool for Claude Code hooks

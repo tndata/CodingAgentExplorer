@@ -73,6 +73,7 @@
         }
         .card-inspector .card-icon { color: var(--accent); }
         .card-conversation .card-icon { color: var(--purple); }
+        .card-mcp .card-icon { color: var(--green); }
     </style>
 </head>
 <body>
@@ -88,6 +89,11 @@
             <span class="card-icon">&#x1F4AC;</span>
             <h2>Conversation View</h2>
             <p>Chat-style display of Claude conversations showing messages, tool use, and responses.</p>
+        </a>
+        <a href="/mcp/index.html" class="card card-mcp">
+            <span class="card-icon">&#x1F50C;</span>
+            <h2>MCP Observer</h2>
+            <p>Configure the MCP proxy on port 9999 and inspect all traffic between Claude Code and MCP servers.</p>
         </a>
     </div>
 </body>

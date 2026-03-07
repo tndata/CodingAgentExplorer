@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Observer - Coding Agent Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --red: #f85149;
+            --purple: #bc8cff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-left { display: flex; flex-direction: column; gap: 2px; }
+        .header-title { font-size: 16px; font-weight: 600; }
+        .toolbar { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+        .toolbar-link { color: var(--accent); text-decoration: none; }
+        .toolbar-link:hover { text-decoration: underline; }
+        .toolbar-active { color: var(--text); font-weight: 600; }
+        .toolbar-sep { color: var(--border); }
+        .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+        .separator { color: var(--border); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--red); }
+        .status-dot.connected { background: var(--green); }
+        .clear-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .clear-btn:hover { background: var(--red); color: var(--text); border-color: var(--red); }
+
+        /* Config panel */
+        .config-panel {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+        }
+        .config-panel label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 8px;
+        }
+        .config-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .config-row input {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+            padding: 7px 12px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            outline: none;
+        }
+        .config-row input:focus { border-color: var(--accent); }
+        .config-row input::placeholder { color: var(--text-secondary); }
+        button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        button:hover { opacity: 0.85; }
+        button.clear-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        button.clear-btn:hover { color: var(--text); }
+        .status-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+        .status-text.active { color: var(--green); }
+        .status-text.inactive { color: var(--yellow); }
+
+
+        /* Table */
+        .table-wrap {
+            flex: 1;
+            overflow: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        thead th {
+            background: var(--bg-secondary);
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+        }
+        tbody tr:hover { background: var(--bg-secondary); }
+        tbody tr.selected { background: var(--bg-tertiary); }
+        td { padding: 7px 12px; vertical-align: middle; }
+        .time { color: var(--text-secondary); font-size: 11px; white-space: nowrap; }
+        .method-badge {
+            display: inline-block;
+            padding: 1px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+        }
+        .method-get { background: #1f3d1a; color: var(--green); }
+        .method-post { background: #1a2d3d; color: var(--accent); }
+        .method-other { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .path-cell {
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            color: var(--text);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .rpc-method {
+            color: var(--purple);
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12px;
+        }
+        .status-ok { color: var(--green); }
+        .status-err { color: var(--red); }
+        .status-pending { color: var(--text-secondary); }
+        .duration { color: var(--text-secondary); font-size: 12px; text-align: right; }
+
+        /* Detail panel */
+        .detail-panel {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            height: 300px;
+            overflow: auto;
+            padding: 16px 20px;
+            font-size: 12px;
+        }
+        .detail-panel h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .detail-block { }
+        pre {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 11px;
+            color: var(--text);
+            max-height: 200px;
+        }
+        .sse-list {
+            list-style: none;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 11px;
+        }
+        .sse-list li {
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .sse-list li span { color: var(--accent); }
+        .sse-list li pre { margin-top: 4px; }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 60px 20px;
+            font-size: 14px;
+        }
+
+        /* View tabs */
+        .detail-block-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .detail-block-header h3 { margin-bottom: 0; }
+        .view-tabs { display: flex; gap: 3px; }
+        .view-tab {
+            background: var(--bg-tertiary); border: 1px solid var(--border);
+            color: var(--text-secondary); padding: 1px 9px; border-radius: 4px;
+            font-size: 11px; cursor: pointer;
+        }
+        .view-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        /* Pretty view */
+        .pretty-tool {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            background: var(--bg-tertiary);
+        }
+        .pretty-tool-name { font-family: 'SFMono-Regular', Consolas, monospace; color: var(--purple); font-size: 12px; font-weight: 600; }
+        .pretty-tool-desc { color: var(--text); font-size: 11px; margin-top: 3px; }
+        .pretty-tool-params { color: var(--text-secondary); font-size: 11px; margin-top: 4px; font-family: 'SFMono-Regular', Consolas, monospace; }
+        .pretty-row { display: flex; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+        .pretty-key { color: var(--text-secondary); min-width: 110px; flex-shrink: 0; }
+        .pretty-val { color: var(--text); word-break: break-all; }
+
+
+        /* Modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-backdrop.open { display: flex; }
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 560px;
+            width: 90%;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .modal h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+        .modal p { color: var(--text-secondary); margin-bottom: 12px; }
+        .modal code {
+            display: block;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12px;
+            color: var(--accent);
+            margin: 12px 0;
+            word-break: break-all;
+        }
+        .modal-close {
+            margin-top: 16px;
+            float: right;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <nav class="toolbar">
+            <a href="/" class="toolbar-link">Home</a>
+            <span class="toolbar-sep">|</span>
+            <a href="/inspector/index.html" class="toolbar-link">Inspector</a>
+            <span class="toolbar-sep">|</span>
+            <a href="/conversation/index.html" class="toolbar-link">Conversation</a>
+            <span class="toolbar-sep">|</span>
+            <span class="toolbar-active">MCP Observer</span>
+        </nav>
+        <span class="header-title">&#x1F50C; MCP Observer</span>
+    </div>
+    <div class="status">
+        <button class="clear-btn" onclick="clearRequests()">Clear</button>
+        <span class="separator">|</span>
+        <button class="clear-btn" onclick="document.getElementById('helpModal').classList.add('open')">Help</button>
+        <span class="separator">|</span>
+        <span class="status-dot" id="connDot"></span>
+        <span id="connText">Disconnected</span>
+    </div>
+</div>
+
+<div class="config-panel">
+    <label for="destUrl">MCP Destination URL (the real MCP server, e.g. https://gitmcp.io/tndata/CloudDebugger)</label>
+    <div class="config-row">
+        <input type="text" id="destUrl" value="https://gitmcp.io/tndata/CloudDebugger" />
+        <button onclick="setDestination()">Set</button>
+        <button class="clear-btn" onclick="clearDestination()">Clear</button>
+    </div>
+    <div class="status-text inactive" id="statusText">No destination configured. Port 9999 is not active.</div>
+</div>
+
+<div class="modal-backdrop" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+        <h2>&#x1F50C; Registering the MCP Proxy in Claude Code</h2>
+        <p>The MCP Observer sits between Claude Code and the real MCP server. Set the destination URL above, then register the proxy as an MCP server in Claude Code using this command:</p>
+        <code>claude mcp add --transport http mcp_proxy http://localhost:9999</code>
+        <p>Claude Code will send all MCP traffic to <strong style="color:var(--accent)">http://localhost:9999</strong>, which this proxy forwards to the destination URL you configured above.</p>
+        <p>To remove the proxy registration later:</p>
+        <code>claude mcp remove mcp_proxy</code>
+
+        <hr style="border:none; border-top:1px solid var(--border); margin: 16px 0;">
+        <h2>Sample MCP Services</h2>
+
+        <p><strong style="color:var(--text)">Microsoft Learn</strong> &mdash; Azure, .NET, and Microsoft docs</p>
+        <code>https://learn.microsoft.com/api/mcp</code>
+        <p style="margin-top:-4px">Sample prompt: <em style="color:var(--text)">"How do I create an Azure Container App using az cli?"</em></p>
+
+        <p style="margin-top:12px"><strong style="color:var(--text)">Context7</strong> &mdash; Up-to-date library and framework docs</p>
+        <code>https://mcp.context7.com/mcp</code>
+        <p style="margin-top:-4px">Sample prompt: <em style="color:var(--text)">"How do I set up middleware in Next.js 15? use context7"</em></p>
+
+        <button class="clear-btn modal-close" onclick="document.getElementById('helpModal').classList.remove('open')">Close</button>
+    </div>
+</div>
+
+
+<div class="table-wrap">
+    <table id="requestTable">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Method</th>
+                <th>Path</th>
+                <th>JSON-RPC Method</th>
+                <th>Status</th>
+                <th style="text-align:right">Duration</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <tr><td colspan="6" class="empty-state">No MCP requests captured yet. Configure a destination and register <code>http://localhost:9999</code> as an MCP server in Claude Code.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="detail-panel" id="detailPanel" style="display:none">
+    <div class="detail-grid">
+        <div class="detail-block">
+            <h3>Request Body</h3>
+            <pre id="reqBody">—</pre>
+        </div>
+        <div class="detail-block">
+            <div class="detail-block-header">
+                <h3>Response</h3>
+                <div class="view-tabs">
+                    <button class="view-tab active" id="tabPretty" onclick="setView('pretty')">Pretty</button>
+                    <button class="view-tab" id="tabRaw" onclick="setView('raw')">Raw</button>
+                </div>
+            </div>
+            <div id="respContent"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const requests = [];
+    let selectedId = null;
+
+    // SignalR
+    const conn = new signalR.HubConnectionBuilder()
+        .withUrl('/hub')
+        .withAutomaticReconnect()
+        .build();
+
+    conn.on('McpHistory', items => {
+        items.forEach(r => addOrUpdate(r, false));
+        requests.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        renderTable();
+    });
+
+    conn.on('NewMcpRequest', r => {
+        addOrUpdate(r, true);
+        renderTable();
+        if (r.id === selectedId) renderDetail(requests.find(x => x.id === selectedId));
+    });
+
+    conn.on('McpConfigChanged', cfg => {
+        applyConfig(cfg.destinationUrl);
+    });
+
+    conn.on('McpCleared', () => {
+        requests.length = 0;
+        selectedId = null;
+        renderTable();
+        document.getElementById('detailPanel').style.display = 'none';
+    });
+
+    function setConnected(on) {
+        document.getElementById('connDot').className = 'status-dot' + (on ? ' connected' : '');
+        document.getElementById('connText').textContent = on ? 'Connected' : 'Disconnected';
+    }
+
+    conn.onreconnecting(() => setConnected(false));
+    conn.onreconnected(() => setConnected(true));
+    conn.start().then(() => setConnected(true));
+
+    function addOrUpdate(r, scrollToBottom) {
+        const idx = requests.findIndex(x => x.id === r.id);
+        if (idx >= 0) requests[idx] = r;
+        else {
+            requests.push(r);
+            if (scrollToBottom) {
+                const wrap = document.querySelector('.table-wrap');
+                setTimeout(() => wrap.scrollTop = wrap.scrollHeight, 0);
+            }
+        }
+    }
+
+    function applyConfig(url) {
+        const input = document.getElementById('destUrl');
+        const status = document.getElementById('statusText');
+        if (url) {
+            input.value = url;
+            status.textContent = `Active: forwarding http://localhost:9999 \u2192 ${url}`;
+            status.className = 'status-text active';
+        } else {
+            status.textContent = 'No destination configured. Port 9999 is not active.';
+            status.className = 'status-text inactive';
+        }
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+
+        if (requests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No MCP requests captured yet. Configure a destination and register <code>http://localhost:9999</code> as an MCP server in Claude Code.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = requests.map(r => {
+            const t = new Date(r.timestamp);
+            const time = t.toLocaleTimeString('en-GB', { hour12: false });
+            const methodClass = r.method === 'GET' ? 'method-get' : r.method === 'POST' ? 'method-post' : 'method-other';
+            const rpcMethod = extractRpcMethod(r.requestBody);
+            const status = r.statusCode
+                ? `<span class="${r.statusCode < 400 ? 'status-ok' : 'status-err'}">${r.statusCode}</span>`
+                : '<span class="status-pending">—</span>';
+            const dur = r.durationMs != null ? `${Math.round(r.durationMs)} ms` : '—';
+            const sel = r.id === selectedId ? ' selected' : '';
+            return `<tr class="${sel}" onclick="selectRow('${r.id}')">
+                <td class="time">${time}</td>
+                <td><span class="method-badge ${methodClass}">${r.method}</span></td>
+                <td class="path-cell" title="${esc(r.path)}">${esc(r.path)}</td>
+                <td class="rpc-method">${esc(rpcMethod)}</td>
+                <td>${status}</td>
+                <td class="duration">${dur}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function extractRpcMethod(body) {
+        if (!body) return '—';
+        try {
+            const j = JSON.parse(body);
+            if (!j.method) return '—';
+            if (j.method === 'tools/call' && j.params?.name) {
+                const name = j.params.name.length > 24 ? j.params.name.slice(0, 24) + '…' : j.params.name;
+                return `tools/call (${name})`;
+            }
+            return j.method;
+        } catch {}
+        return '—';
+    }
+
+    let currentView = 'pretty';
+
+    function setView(v) {
+        currentView = v;
+        document.getElementById('tabRaw').className = 'view-tab' + (v === 'raw' ? ' active' : '');
+        document.getElementById('tabPretty').className = 'view-tab' + (v === 'pretty' ? ' active' : '');
+        const r = requests.find(x => x.id === selectedId);
+        if (r) renderDetail(r);
+    }
+
+    function selectRow(id) {
+        selectedId = id;
+        const r = requests.find(x => x.id === id);
+        renderTable();
+        if (!r) return;
+        document.getElementById('detailPanel').style.display = 'block';
+        document.getElementById('reqBody').textContent = prettyJson(r.requestBody) || '(empty)';
+        renderDetail(r);
+    }
+
+    function renderDetail(r) {
+        const respEl = document.getElementById('respContent');
+        if (currentView === 'pretty') {
+            respEl.innerHTML = renderPretty(r);
+        } else {
+            respEl.innerHTML = renderRaw(r);
+        }
+    }
+
+    function renderRaw(r) {
+        if (r.sseEvents && r.sseEvents.length > 0) {
+            const items = r.sseEvents.map(e =>
+                `<li><pre>${esc(prettyJson(e.data) || e.data || '(empty)')}</pre></li>`
+            ).join('');
+            return `<ul class="sse-list">${items}</ul>`;
+        }
+        return `<pre>${esc(prettyJson(r.responseBody) || '(empty)')}</pre>`;
+    }
+
+    function renderPretty(r) {
+        const rpcMethod = extractRpcMethod(r.requestBody);
+        const json = getResponseJson(r);
+        if (!json) return `<pre>${esc(prettyJson(r.responseBody) || '(empty)')}</pre>`;
+        const result = json.result;
+        if (!result) return `<pre>${esc(JSON.stringify(json, null, 2))}</pre>`;
+
+        if (rpcMethod === 'tools/list' && result.tools) return renderToolsList(result.tools);
+        if (rpcMethod === 'initialize') return renderInitialize(result);
+        if (rpcMethod === 'tools/call') return renderToolCall(result);
+        // fallback: pretty JSON
+        return `<pre>${esc(JSON.stringify(result, null, 2))}</pre>`;
+    }
+
+    function renderToolsList(tools) {
+        if (!tools.length) return '<p style="color:var(--text-secondary);font-size:12px">No tools returned.</p>';
+        return tools.map(t => {
+            const props = t.inputSchema?.properties || {};
+            const required = t.inputSchema?.required || [];
+            const params = Object.entries(props).map(([k, v]) => {
+                const req = required.includes(k) ? '' : '?';
+                return `<span style="color:var(--accent)">${esc(k)}${req}</span><span style="color:var(--text-secondary)">: ${esc(v.type || 'any')}</span>`;
+            }).join(', ');
+            return `<div class="pretty-tool">
+                <div class="pretty-tool-name">${esc(t.name)}</div>
+                <div class="pretty-tool-desc">${esc(t.description || '')}</div>
+                ${params ? `<div class="pretty-tool-params">(${params})</div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    function renderInitialize(result) {
+        const rows = [];
+        if (result.protocolVersion) rows.push(['Protocol Version', result.protocolVersion]);
+        if (result.serverInfo?.name) rows.push(['Server', `${result.serverInfo.name} ${result.serverInfo.version || ''}`.trim()]);
+        if (result.capabilities) rows.push(['Capabilities', JSON.stringify(result.capabilities)]);
+        if (!rows.length) return `<pre>${esc(JSON.stringify(result, null, 2))}</pre>`;
+        return rows.map(([k, v]) =>
+            `<div class="pretty-row"><span class="pretty-key">${esc(k)}</span><span class="pretty-val">${esc(v)}</span></div>`
+        ).join('');
+    }
+
+    function renderToolCall(result) {
+        const content = result.content || [];
+        if (!content.length) return `<pre>${esc(JSON.stringify(result, null, 2))}</pre>`;
+        return content.map(c => {
+            if (c.type === 'text') return `<pre>${esc(c.text || '')}</pre>`;
+            return `<pre>${esc(JSON.stringify(c, null, 2))}</pre>`;
+        }).join('');
+    }
+
+    function getResponseJson(r) {
+        if (r.responseBody) { try { return JSON.parse(r.responseBody); } catch {} }
+        if (r.sseEvents?.length) {
+            for (const e of r.sseEvents) { try { return JSON.parse(e.data); } catch {} }
+        }
+        return null;
+    }
+
+    function prettyJson(str) {
+        if (!str) return '';
+        try { return JSON.stringify(JSON.parse(str), null, 2); } catch { return str; }
+    }
+
+    function esc(s) {
+        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    async function setDestination() {
+        const url = document.getElementById('destUrl').value.trim();
+        await fetch('/api/mcp-destination', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url || null })
+        });
+    }
+
+    async function clearDestination() {
+        document.getElementById('destUrl').value = '';
+        await fetch('/api/mcp-destination', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: null })
+        });
+    }
+
+    async function clearRequests() {
+        await conn.invoke('ClearMcp');
+    }
+</script>
+</body>
+</html>

@@ -105,9 +105,8 @@ public class CaptureTransformProvider : ITransformProvider
         if (httpContext.Items["Stopwatch"] is not Stopwatch stopwatch)
             return;
 
-        var store = httpContext.RequestServices.GetRequiredService<RequestStore>();
-        var hubContext = httpContext.RequestServices
-            .GetRequiredService<IHubContext<DashboardHub>>();
+        bool isMcp = httpContext.Connection.LocalPort == 9999;
+        var hubContext = httpContext.RequestServices.GetRequiredService<IHubContext<DashboardHub>>();
 
         var proxyResponse = responseContext.ProxyResponse;
         if (proxyResponse == null)
@@ -115,22 +114,16 @@ public class CaptureTransformProvider : ITransformProvider
             stopwatch.Stop();
             proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
             proxiedRequest.StatusCode = responseContext.HttpContext.Response.StatusCode;
-            store.Add(proxiedRequest);
-            await hubContext.Clients.All.SendAsync("NewRequest", proxiedRequest);
+            StoreAndNotify(httpContext, proxiedRequest, isMcp, hubContext);
             return;
         }
 
         proxiedRequest.StatusCode = (int)proxyResponse.StatusCode;
 
-        // Copy response headers
         foreach (var header in proxyResponse.Headers)
-        {
             proxiedRequest.ResponseHeaders[header.Key] = string.Join(", ", header.Value);
-        }
         foreach (var header in proxyResponse.Content.Headers)
-        {
             proxiedRequest.ResponseHeaders[header.Key] = string.Join(", ", header.Value);
-        }
 
         var contentType = proxyResponse.Content.Headers.ContentType?.MediaType ?? "";
         var isEventStream = contentType.Contains("text/event-stream");
@@ -138,20 +131,43 @@ public class CaptureTransformProvider : ITransformProvider
         if (isEventStream)
         {
             responseContext.SuppressResponseBody = true;
-            await HandleSseStreamingAsync(httpContext, proxyResponse, proxiedRequest, stopwatch);
+            await HandleSseStreamingAsync(httpContext, proxyResponse, proxiedRequest, stopwatch, isMcp);
         }
         else
         {
-            await HandleNonStreamingResponseAsync(proxyResponse, proxiedRequest, stopwatch);
+            await HandleNonStreamingResponseAsync(proxyResponse, proxiedRequest, stopwatch, isMcp);
         }
 
-        store.Add(proxiedRequest);
-        await hubContext.Clients.All.SendAsync("NewRequest", proxiedRequest);
+        StoreAndNotify(httpContext, proxiedRequest, isMcp, hubContext);
+    }
+
+    private static void StoreAndNotify(HttpContext httpContext, ProxiedRequest proxiedRequest,
+        bool isMcp, IHubContext<DashboardHub> hubContext)
+    {
+        if (isMcp)
+        {
+            // Ignore SSE keep-alive polling: GET / with no body (204 No Content)
+            if (proxiedRequest.Method == "GET"
+                && proxiedRequest.Path == "/"
+                && string.IsNullOrEmpty(proxiedRequest.RequestBody))
+                return;
+
+            var mcpStore = httpContext.RequestServices.GetRequiredService<McpRequestStore>();
+            mcpStore.Add(proxiedRequest);
+            // fire-and-forget — we're in a sync context here
+            _ = hubContext.Clients.All.SendAsync("NewMcpRequest", proxiedRequest);
+        }
+        else
+        {
+            var store = httpContext.RequestServices.GetRequiredService<RequestStore>();
+            store.Add(proxiedRequest);
+            _ = hubContext.Clients.All.SendAsync("NewRequest", proxiedRequest);
+        }
     }
 
     private static async Task HandleSseStreamingAsync(
         HttpContext httpContext, HttpResponseMessage proxyResponse,
-        ProxiedRequest proxiedRequest, Stopwatch stopwatch)
+        ProxiedRequest proxiedRequest, Stopwatch stopwatch, bool isMcp = false)
     {
         var logger = httpContext.RequestServices
             .GetRequiredService<ILoggerFactory>()
@@ -212,8 +228,9 @@ public class CaptureTransformProvider : ITransformProvider
                         Data = data
                     });
 
-                    ParseSseEventData(proxiedRequest, currentEventType, data,
-                        stopwatch, ref firstTokenSeen);
+                    if (!isMcp)
+                        ParseSseEventData(proxiedRequest, currentEventType, data,
+                            stopwatch, ref firstTokenSeen);
                 }
                 else if (line == "")
                 {
@@ -232,7 +249,8 @@ public class CaptureTransformProvider : ITransformProvider
     }
 
     private static async Task HandleNonStreamingResponseAsync(
-        HttpResponseMessage proxyResponse, ProxiedRequest proxiedRequest, Stopwatch stopwatch)
+        HttpResponseMessage proxyResponse, ProxiedRequest proxiedRequest, Stopwatch stopwatch,
+        bool isMcp = false)
     {
         await proxyResponse.Content.LoadIntoBufferAsync();
         var body = await ReadResponseBodyAsync(proxyResponse);
@@ -241,7 +259,8 @@ public class CaptureTransformProvider : ITransformProvider
         stopwatch.Stop();
         proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
 
-        ParseNonStreamingResponse(proxiedRequest, body);
+        if (!isMcp)
+            ParseNonStreamingResponse(proxiedRequest, body);
     }
 
     private static void ParseSseEventData(ProxiedRequest request, string? eventType,

@@ -3,6 +3,7 @@ using CodingAgentExplorer.Models;
 using CodingAgentExplorer.Proxy;
 using CodingAgentExplorer.Services;
 using Microsoft.AspNetCore.SignalR;
+using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Transforms.Builder;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,8 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure Kestrel endpoints
 builder.WebHost.ConfigureKestrel(options =>
 {
-    // Port 8888: Proxy (HTTP)
+    // Port 8888: Claude API proxy (HTTP)
     options.ListenLocalhost(8888);
+    // Port 9999: MCP proxy (HTTP)
+    options.ListenLocalhost(9999);
     // Port 5000: Dashboard (HTTP)
     options.ListenLocalhost(5000);
     // Port 5001: Dashboard (HTTPS)
@@ -21,6 +24,8 @@ builder.WebHost.ConfigureKestrel(options =>
 // Services
 builder.Services.AddSingleton<RequestStore>();
 builder.Services.AddSingleton<HookEventStore>();
+builder.Services.AddSingleton<McpProxyConfig>();
+builder.Services.AddSingleton<McpRequestStore>();
 builder.Services.AddSingleton<ITransformProvider, CaptureTransformProvider>();
 builder.Services.AddSignalR()
     .AddJsonProtocol(options =>
@@ -29,9 +34,9 @@ builder.Services.AddSignalR()
             System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-// YARP
-builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+// YARP with dynamic config (handles both Claude on :8888 and MCP on :9999)
+builder.Services.AddReverseProxy();
+builder.Services.AddSingleton<IProxyConfigProvider, DynamicProxyConfigProvider>();
 
 var app = builder.Build();
 
@@ -66,6 +71,26 @@ app.MapPost("/api/hook-event", async (
     });
 })
 .RequireHost("*:5000", "*:5001");   // NOT on :8888 (YARP proxy port)
+
+// MCP destination config endpoints
+app.MapGet("/api/mcp-destination", (McpProxyConfig mcpConfig) =>
+    Results.Ok(new { destinationUrl = mcpConfig.DestinationUrl }))
+.RequireHost("*:5000", "*:5001");
+
+app.MapPost("/api/mcp-destination", async (
+    HttpContext ctx,
+    McpProxyConfig mcpConfig,
+    McpRequestStore mcpStore,
+    IHubContext<DashboardHub> hub) =>
+{
+    var body = await ctx.Request.ReadFromJsonAsync<McpDestinationRequest>();
+    mcpConfig.SetDestination(body?.Url);
+    mcpStore.Clear();
+    await hub.Clients.All.SendAsync("McpConfigChanged", new { destinationUrl = mcpConfig.DestinationUrl });
+    await hub.Clients.All.SendAsync("McpCleared");
+    return Results.Ok();
+})
+.RequireHost("*:5000", "*:5001");
 
 app.MapFallbackToFile("index.html").RequireHost("*:5000", "*:5001");
 
