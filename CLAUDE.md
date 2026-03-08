@@ -29,10 +29,9 @@ publish.bat
 bash publish.sh
 ```
 
-Outputs to `Published/` (gitignored):
+Each script builds both projects for the current platform. Outputs to `Published/` (gitignored):
 - `Published\CodingAgentExplorer\` - framework-dependent, requires .NET 10 runtime
-- `Published\HookAgent\HookAgent.exe` - single-file, win-x64 (from publish.bat)
-- `Published\HookAgent-win-x64\`, `HookAgent-linux-x64\`, `HookAgent-osx-arm64\`, `HookAgent-osx-x64\` - all platforms (from publish.sh)
+- `Published\HookAgent\HookAgent.exe` - single-file, current platform (Windows: win-x64; macOS/Linux: detected at build time)
 
 ## Usage with Claude Code
 
@@ -71,7 +70,7 @@ The destination URL is stored in `McpProxyConfig` (singleton) and triggers a YAR
 - `wwwroot/mcp/` - MCP Observer page
 - `HookAgent/` - Single-file CLI tool used as a Claude Code hook command
 - `publish.bat` - Publishes both projects to `Published/` (Windows, win-x64 HookAgent)
-- `publish.sh` - Publishes both projects to `Published/` (all four platform targets for HookAgent)
+- `publish.sh` - Publishes both projects to `Published/` (detects current platform for HookAgent)
 
 ## Writing Style
 
