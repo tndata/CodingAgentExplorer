@@ -2,47 +2,43 @@
 
 A real-time .NET proxy and dashboard for inspecting Claude Code API calls. Intercept, visualize, and analyze every request and response between Claude Code and the Anthropic API.
 
-Built as a teaching tool for [Tore Nestenius'](https://tn-data.se/) AI agent [Workshops and presentations](https://tn-data.se/courses/), helping developers understand what happens under the hood when AI coding agents work.
+With Coding Agent Explorer, you can:
+
+- See every API request and response between Claude Code and the Anthropic API in real time
+- Inspect full request/response headers, bodies, and streaming SSE events
+- Track token usage, model selection, and time-to-first-token
+- Follow the conversation as a readable chat-style timeline
+- Capture and inspect MCP tool calls between Claude Code and HTTP-based MCP servers
+- Monitor Claude Code hook events alongside API traffic
 
 
-> **Note:** Currently supports [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with the Anthropic API. Support for additional coding agents may be added in the future.
+## Dashboard
+
+The dashboard offers three views for inspecting your coding agent's activity: HTTP Inspector, Conversation View, and MCP Observer.
 
 <img src="docs/images/Coding_Agent_Explorer_Main_Page_With_MCP.png" alt="Coding Agent Explorer - Main Page" width="800">
 
-The dashboard offers three views for inspecting your coding agent's activity:
-
 ## HTTP Inspector
+
+Every API request and response is captured and displayed in a table with full headers, request and response bodies, streaming SSE events, token usage, and timing details.
 
 <img src="docs/images/coding-agent-explorer-HTTP-Inspector.png" alt="HTTP Inspector" width="800">
 
-Table view of all proxied requests with headers, bodies, streaming SSE events, and timing details.
-
 ## Conversation View
+
+The Conversation View renders the raw API traffic as a readable chat-style timeline, showing messages, tool calls, responses, and hook events in the order they occurred.
 
 <img src="docs/images/coding-agent-explorer-conversation-view.png" alt="Conversation View" width="800">
 
-Chat-style display of Claude conversations showing messages, tool use, and responses.
-
 ## MCP Observer
 
-<img src="docs/images/MCP_Observer.png" alt="MCP Observer" width="800">
+The MCP Observer acts as a proxy between Claude Code and any HTTP-based MCP server. Configure the destination URL and all MCP traffic is captured and displayed in real time. The MCP Observer will be covered in a future blog post.
 
-Inspect all traffic between Claude Code and HTTP-based MCP servers. Set the destination URL and all MCP requests are captured and displayed in real time.
+<img src="docs/images/MCP_Observer.png" alt="MCP Observer" width="800">
 
 ## Read More
 
 Want to learn more about the architecture and design decisions behind this project? Check out the detailed blog post: [Introducing the Coding Agent Explorer .NET](https://nestenius.se/ai/introducing-the-coding-agent-explorer-net/)
-
-## What It Does
-
-Coding Agent Explorer sits between your coding agent and the LLM API, capturing all traffic and displaying it in a real-time web dashboard. You can see:
-
-- Every API request and response in real time
-- Streaming SSE events as they arrive
-- Token usage (input, output, cache creation, cache reads)
-- Model selection, timing, and time-to-first-token
-- Full request/response headers and bodies
-- A conversation view that renders the agent's messages in a chat-style format
 
 ## Prerequisites
 
@@ -327,7 +323,13 @@ speaker at conferences and user groups, Tore actively shares his knowledge and i
 
 ## Want to learn more about AI agents?
 
+Coding Agent Explorer was built as a teaching tool for [Tore Nestenius'](https://tn-data.se/) AI agent [workshops and presentations](https://tn-data.se/courses/), helping developers understand what happens under the hood when AI coding agents work.
+
 Join one of Tore's workshops for programmers at [tn-data.se/courses](https://tn-data.se/courses/) to deepen your understanding of AI coding agents, .NET development, and cloud architecture.
+
+## What About Other Coding Agents?
+
+Coding Agent Explorer currently supports [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with the Anthropic API. Support for additional coding agents may be added in the future.
 
 ## License
 
