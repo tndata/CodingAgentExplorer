@@ -7,14 +7,27 @@ Built as a teaching tool for [Tore Nestenius'](https://tn-data.se/) AI agent [Wo
 
 > **Note:** Currently supports [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with the Anthropic API. Support for additional coding agents may be added in the future.
 
+<img src="docs/images/Coding_Agent_Explorer_Main_Page_With_MCP.png" alt="Coding Agent Explorer - Main Page" width="800">
 
-<img src="docs/images/coding-agent-explorer-conversation-view.png" alt="Conversation View" width="800">
+The dashboard offers three views for inspecting your coding agent's activity:
 
-The agentic conversation view allows you to explore the conversation with the LLM models.
+## HTTP Inspector
 
 <img src="docs/images/coding-agent-explorer-HTTP-Inspector.png" alt="HTTP Inspector" width="800">
 
-The HTTP Inspector view lets you examine every API request and response in detail, including headers, bodies, and streaming SSE events.
+Table view of all proxied requests with headers, bodies, streaming SSE events, and timing details.
+
+## Conversation View
+
+<img src="docs/images/coding-agent-explorer-conversation-view.png" alt="Conversation View" width="800">
+
+Chat-style display of Claude conversations showing messages, tool use, and responses.
+
+## MCP Observer
+
+<img src="docs/images/MCP_Observer.png" alt="MCP Observer" width="800">
+
+Inspect all traffic between Claude Code and HTTP-based MCP servers. Set the destination URL and all MCP requests are captured and displayed in real time.
 
 ## Read More
 
