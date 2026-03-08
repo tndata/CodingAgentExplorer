@@ -75,6 +75,7 @@ The destination URL is stored in `McpProxyConfig` (singleton) and triggers a YAR
 ## Writing Style
 
 - Never use em dashes (—) in README.md or any documentation. Use a comma, hyphen, colon, or reword the sentence instead.
+- Never use a dash (hyphen) between two sentences or clauses as a separator. Use a period, comma, colon, or reword instead.
 
 ## Key Design Decisions
 
