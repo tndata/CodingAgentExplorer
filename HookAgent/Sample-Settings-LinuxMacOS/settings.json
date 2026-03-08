@@ -1,0 +1,119 @@
+{
+  "_readme": [
+    "Sample .claude/settings.json for macOS and Linux — captures every Claude Code hook event and forwards it to",
+    "the CodingAgentExplorer dashboard (http://localhost:5000).",
+    "",
+    "Setup:",
+    "  1. Copy the Published/HookAgent/ folder into your working directory (e.g. ~/MyProject/HookAgent/).",
+    "  2. Copy this file to .claude/settings.json inside that same working directory.",
+    "  3. Start CodingAgentExplorer (dotnet run), then run 'claude' from your working directory.",
+    "",
+    "The command path is relative — it resolves from wherever you run 'claude'.",
+    "If the dashboard is not running, HookAgent exits silently with code 0."
+  ],
+
+  "hooks": {
+
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PostToolUseFailure": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PermissionRequest": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "UserPromptSubmit": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "SessionEnd": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "SubagentStart": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "SubagentStop": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "Notification": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PreCompact": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "ConfigChange": [
+      {
+        "matcher": ".*",
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "TeammateIdle": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "TaskCompleted": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ]
+
+  }
+}

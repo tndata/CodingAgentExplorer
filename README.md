@@ -204,25 +204,43 @@ Claude Code invokes hook commands by writing a JSON payload to **stdin** and rea
 4. Relays the server's `exitCode`, `stdout`, and `stderr` back to Claude Code
 5. Exits silently with code 0 if the dashboard is not running, so it never blocks Claude Code
 
-### Setup for a workshop / demo
+### Setup on Windows
 
-**Step 1:** Run `publish.bat` (Windows) or `bash publish.sh` (macOS/Linux) to build both projects for your platform.
+**Step 1:** Run `publish.bat` to build both projects.
 
-**Step 2:** Copy the `HookAgent/` folder into the working directory where students will run `claude`:
+**Step 2:** Copy `Published\HookAgent\` into the working directory where students will run `claude`. You can also add it to your `PATH` so the command is available globally.
 
 ```
 C:\MyProject\
   HookAgent\
-    HookAgent.exe    (HookAgent on Linux/macOS)
+    HookAgent.exe
   .claude\
-    settings.json    ← copied from sample-settings.json in this repo
+    settings.json
 ```
 
-**Step 3:** Copy `sample-settings.json` from the repo root to `.claude\settings.json` in the working directory. This file registers HookAgent for all 15 Claude Code hook events.
+**Step 3:** Copy `HookAgent\Sample-Settings-Windows\settings.json` from the repo to `.claude\settings.json` in the working directory. This registers HookAgent for all 15 Claude Code hook events.
 
 **Step 4:** Start CodingAgentExplorer, then run `claude` from the working directory. Hook events appear in the Conversation View alongside API requests.
 
-> **Note:** Claude Code runs hook commands through **bash** on all platforms (including Windows). Use forward slashes in the command path: `HookAgent/HookAgent.exe`.
+> **Note:** Claude Code runs hook commands through bash on Windows too. Always use forward slashes in the command path: `HookAgent/HookAgent.exe`.
+
+### Setup on macOS / Linux
+
+**Step 1:** Run `bash publish.sh` to build both projects for your platform.
+
+**Step 2:** Copy `Published/HookAgent/` into the working directory where students will run `claude`. You can also add it to your `PATH` so the command is available globally.
+
+```
+~/MyProject/
+  HookAgent/
+    HookAgent
+  .claude/
+    settings.json
+```
+
+**Step 3:** Copy `HookAgent/Sample-Settings-LinuxMacOS/settings.json` from the repo to `.claude/settings.json` in the working directory. This registers HookAgent for all 15 Claude Code hook events.
+
+**Step 4:** Start CodingAgentExplorer, then run `claude` from the working directory. Hook events appear in the Conversation View alongside API requests.
 
 ### Verify it works
 
