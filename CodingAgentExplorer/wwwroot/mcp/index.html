@@ -475,10 +475,12 @@
         tbody.innerHTML = requests.map(r => {
             const t = new Date(r.timestamp);
             const time = t.toLocaleTimeString('en-GB', { hour12: false });
-            const methodClass = r.method === 'GET' ? 'method-get' : r.method === 'POST' ? 'method-post' : 'method-other';
+            const methodClassMap = { GET: 'method-get', POST: 'method-post' };
+            const methodClass = methodClassMap[r.method] ?? 'method-other';
             const rpcMethod = extractRpcMethod(r.requestBody);
+            const statusClass = r.statusCode < 400 ? 'status-ok' : 'status-err';
             const status = r.statusCode
-                ? `<span class="${r.statusCode < 400 ? 'status-ok' : 'status-err'}">${r.statusCode}</span>`
+                ? `<span class="${statusClass}">${r.statusCode}</span>`
                 : '<span class="status-pending">—</span>';
             const dur = r.durationMs != null ? `${Math.round(r.durationMs)} ms` : '—';
             const sel = r.id === selectedId ? ' selected' : '';

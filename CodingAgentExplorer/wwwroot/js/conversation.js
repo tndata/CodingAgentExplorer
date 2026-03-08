@@ -123,9 +123,9 @@ function appendExchange(req) {
     const el = buildExchangeElement(req);
     const reqMs = new Date(req.timestamp).getTime();
     const insertBefore = Array.from(feed.children).find(card =>
-        card.dataset.timestamp && parseInt(card.dataset.timestamp) > reqMs
+        card.dataset.timestamp && Number.parseInt(card.dataset.timestamp) > reqMs
     );
-    insertBefore ? feed.insertBefore(el, insertBefore) : feed.appendChild(el);
+    insertBefore ? insertBefore.before(el) : feed.appendChild(el);
 }
 
 function insertHookEventInTimeline(evt) {
@@ -135,9 +135,9 @@ function insertHookEventInTimeline(evt) {
     const el = buildHookEventElement(evt);
     const evtMs = new Date(evt.timestamp).getTime();
     const insertBefore = Array.from(feed.children).find(card =>
-        card.dataset.timestamp && parseInt(card.dataset.timestamp) > evtMs
+        card.dataset.timestamp && Number.parseInt(card.dataset.timestamp) > evtMs
     );
-    insertBefore ? feed.insertBefore(el, insertBefore) : feed.appendChild(el);
+    insertBefore ? insertBefore.before(el) : feed.appendChild(el);
 }
 
 function buildExchangeElement(req) {
@@ -167,35 +167,7 @@ function buildExchangeElement(req) {
     }
 
     // 3. Messages from request — collapse history, show only last user message
-    if (parsed.messages && parsed.messages.length > 0) {
-        const lastIdx = parsed.messages.length - 1;
-        // History = everything except the last user message
-        // Find the last user message index
-        let lastUserIdx = -1;
-        for (let i = lastIdx; i >= 0; i--) {
-            if ((parsed.messages[i].role || "user") === "user") {
-                lastUserIdx = i;
-                break;
-            }
-        }
-
-        const historyMessages = lastUserIdx > 0
-            ? parsed.messages.slice(0, lastUserIdx)
-            : [];
-        const currentMessages = lastUserIdx >= 0
-            ? parsed.messages.slice(lastUserIdx)
-            : parsed.messages;
-
-        // Collapsed history section
-        if (historyMessages.length > 0) {
-            messagesDiv.appendChild(buildHistorySection(historyMessages));
-        }
-
-        // Current message(s) — always visible
-        for (const msg of currentMessages) {
-            messagesDiv.appendChild(buildMessageBubble(msg));
-        }
-    }
+    appendMessageBubbles(messagesDiv, parsed.messages);
 
     // 4. API response
     let responseContent = req.isStreaming
@@ -229,6 +201,26 @@ function buildExchangeElement(req) {
     el.appendChild(buildDetailsSection(req));
 
     return el;
+}
+
+function appendMessageBubbles(messagesDiv, messages) {
+    if (!messages || messages.length === 0) return;
+    const lastIdx = messages.length - 1;
+    let lastUserIdx = -1;
+    for (let i = lastIdx; i >= 0; i--) {
+        if ((messages[i].role || "user") === "user") {
+            lastUserIdx = i;
+            break;
+        }
+    }
+    const historyMessages = lastUserIdx > 0 ? messages.slice(0, lastUserIdx) : [];
+    const currentMessages = lastUserIdx >= 0 ? messages.slice(lastUserIdx) : messages;
+    if (historyMessages.length > 0) {
+        messagesDiv.appendChild(buildHistorySection(historyMessages));
+    }
+    for (const msg of currentMessages) {
+        messagesDiv.appendChild(buildMessageBubble(msg));
+    }
 }
 
 // ---------- Meta Bar ----------
@@ -674,7 +666,6 @@ function parseStreamingResponse(sseEvents) {
     if (!sseEvents || sseEvents.length === 0) return [];
 
     const contentBlocks = [];     // indexed by content_block index
-    let currentBlockType = null;
 
     for (const evt of sseEvents) {
         if (!evt.data) continue;
@@ -684,50 +675,60 @@ function parseStreamingResponse(sseEvents) {
         const evtType = evt.eventType || data.type;
 
         if (evtType === "content_block_start" && data.content_block) {
-            const idx = data.index ?? contentBlocks.length;
-            contentBlocks[idx] = { ...data.content_block };
-            if (contentBlocks[idx].type === "text" && !contentBlocks[idx].text) {
-                contentBlocks[idx].text = "";
-            }
-            if (contentBlocks[idx].type === "tool_use" && !contentBlocks[idx].input) {
-                contentBlocks[idx].input = {};
-                contentBlocks[idx]._inputJson = "";
-            }
-            currentBlockType = contentBlocks[idx].type;
+            handleBlockStart(contentBlocks, data);
         }
-
         if (evtType === "content_block_delta" && data.delta) {
-            const idx = data.index ?? (contentBlocks.length - 1);
-            const block = contentBlocks[idx];
-            if (!block) continue;
-
-            if (data.delta.type === "text_delta" && data.delta.text) {
-                block.text = (block.text || "") + data.delta.text;
-            }
-            if (data.delta.type === "input_json_delta" && data.delta.partial_json) {
-                block._inputJson = (block._inputJson || "") + data.delta.partial_json;
-            }
+            handleBlockDelta(contentBlocks, data);
         }
-
         if (evtType === "content_block_stop") {
-            const idx = data.index ?? (contentBlocks.length - 1);
-            const block = contentBlocks[idx];
-            if (block && block._inputJson) {
-                try { block.input = JSON.parse(block._inputJson); } catch { }
-                delete block._inputJson;
-            }
+            handleBlockStop(contentBlocks, data);
         }
     }
 
-    // Clean up any remaining _inputJson
+    finalizeContentBlocks(contentBlocks);
+    return contentBlocks.filter(Boolean);
+}
+
+function handleBlockStart(contentBlocks, data) {
+    const idx = data.index ?? contentBlocks.length;
+    contentBlocks[idx] = { ...data.content_block };
+    if (contentBlocks[idx].type === "text" && !contentBlocks[idx].text) {
+        contentBlocks[idx].text = "";
+    }
+    if (contentBlocks[idx].type === "tool_use" && !contentBlocks[idx].input) {
+        contentBlocks[idx].input = {};
+        contentBlocks[idx]._inputJson = "";
+    }
+}
+
+function handleBlockDelta(contentBlocks, data) {
+    const idx = data.index ?? (contentBlocks.length - 1);
+    const block = contentBlocks[idx];
+    if (!block) return;
+    if (data.delta.type === "text_delta" && data.delta.text) {
+        block.text = (block.text || "") + data.delta.text;
+    }
+    if (data.delta.type === "input_json_delta" && data.delta.partial_json) {
+        block._inputJson = (block._inputJson || "") + data.delta.partial_json;
+    }
+}
+
+function handleBlockStop(contentBlocks, data) {
+    const idx = data.index ?? (contentBlocks.length - 1);
+    const block = contentBlocks[idx];
+    if (block && block._inputJson) {
+        try { block.input = JSON.parse(block._inputJson); } catch { }
+        delete block._inputJson;
+    }
+}
+
+function finalizeContentBlocks(contentBlocks) {
     for (const block of contentBlocks) {
         if (block && block._inputJson) {
             try { block.input = JSON.parse(block._inputJson); } catch { }
             delete block._inputJson;
         }
     }
-
-    return contentBlocks.filter(Boolean);
 }
 
 function parseNonStreamingResponse(bodyStr) {
