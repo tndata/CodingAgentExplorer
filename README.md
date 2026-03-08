@@ -74,7 +74,9 @@ This starts four endpoints:
 
 For **Claude Code**, set the `ANTHROPIC_BASE_URL` environment variable to point at the proxy.
 
-**Linux / macOS - source the script so the variable is set in your current shell:**
+**Linux / macOS:**
+
+Use `source` (not `bash`) so the variable is exported to your current shell:
 
 ```bash
 source EnableProxy.sh
