@@ -619,7 +619,9 @@ function buildToolResultBlock(block) {
 
     const header = document.createElement("div");
     header.className = "tool-result-header";
-    header.innerHTML = `<span class="arrow">&#9654;</span> Tool Result${toolId ? ` <span style="opacity:0.5">(${esc(toolId)})</span>` : ""}${isError ? ' <span style="color:var(--red)">[error]</span>' : ""}`;
+    const toolIdPart = toolId ? ` <span style="opacity:0.5">(${esc(toolId)})</span>` : "";
+    const errorPart = isError ? ' <span style="color:var(--red)">[error]</span>' : "";
+    header.innerHTML = `<span class="arrow">&#9654;</span> Tool Result${toolIdPart}${errorPart}`;
 
     const body = document.createElement("div");
     body.className = "tool-result-body";

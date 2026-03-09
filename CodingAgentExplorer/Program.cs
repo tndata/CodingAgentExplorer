@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.SignalR;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.Transforms.Builder;
 
+const string DashboardPort5000 = "*:5000";
+const string DashboardPort5001 = "*:5001";
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Kestrel endpoints
@@ -46,7 +49,7 @@ app.UseWhen(
     branch => branch.UseStaticFiles());
 
 // Dashboard endpoints (ports 5000/5001 only)
-app.MapHub<DashboardHub>("/hub").RequireHost("*:5000", "*:5001");
+app.MapHub<DashboardHub>("/hub").RequireHost(DashboardPort5000, DashboardPort5001);
 
 app.MapPost("/api/hook-event", async (
     HttpContext ctx,
@@ -70,12 +73,12 @@ app.MapPost("/api/hook-event", async (
         stderr   = hookEvent.Stderr
     });
 })
-.RequireHost("*:5000", "*:5001");   // NOT on :8888 (YARP proxy port)
+.RequireHost(DashboardPort5000, DashboardPort5001);   // NOT on :8888 (YARP proxy port)
 
 // MCP destination config endpoints
 app.MapGet("/api/mcp-destination", (McpProxyConfig mcpConfig) =>
     Results.Ok(new { destinationUrl = mcpConfig.DestinationUrl }))
-.RequireHost("*:5000", "*:5001");
+.RequireHost(DashboardPort5000, DashboardPort5001);
 
 app.MapPost("/api/mcp-destination", async (
     HttpContext ctx,
@@ -90,9 +93,9 @@ app.MapPost("/api/mcp-destination", async (
     await hub.Clients.All.SendAsync("McpCleared");
     return Results.Ok();
 })
-.RequireHost("*:5000", "*:5001");
+.RequireHost(DashboardPort5000, DashboardPort5001);
 
-app.MapFallbackToFile("index.html").RequireHost("*:5000", "*:5001");
+app.MapFallbackToFile("index.html").RequireHost(DashboardPort5000, DashboardPort5001);
 
 // YARP reverse proxy (port 8888 only, via Hosts match in appsettings.json)
 app.MapReverseProxy();

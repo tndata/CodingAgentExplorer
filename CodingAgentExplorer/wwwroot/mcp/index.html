@@ -335,7 +335,7 @@
     <div class="status-text inactive" id="statusText">No destination configured. Port 9999 is not active.</div>
 </div>
 
-<div class="modal-backdrop" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal-backdrop" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')" onkeydown="if(event.key==='Escape')this.classList.remove('open')" role="dialog" aria-modal="true">
     <div class="modal">
         <h2>&#x1F50C; Registering the MCP Proxy in Claude Code</h2>
         <p>The MCP Observer sits between Claude Code and the real MCP server. Set the destination URL above, then register the proxy as an MCP server in Claude Code using this command:</p>
