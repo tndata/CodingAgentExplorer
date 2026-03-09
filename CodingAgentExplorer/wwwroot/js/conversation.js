@@ -855,45 +855,40 @@ function renderDetails(container, req) {
 
 // ---------- Statistics ----------
 
+function computeSystemChars(system) {
+    if (!system) return 0;
+    if (typeof system === "string") return system.length;
+    if (Array.isArray(system)) {
+        let chars = 0;
+        for (const block of system) {
+            chars += (block.type === "text" && block.text) ? block.text.length : JSON.stringify(block).length;
+        }
+        return chars;
+    }
+    return JSON.stringify(system).length;
+}
+
+function computeOutputChars(responseContent) {
+    let chars = 0;
+    for (const block of responseContent) {
+        if (block.text) chars += block.text.length;
+        if (block.input) chars += JSON.stringify(block.input).length;
+    }
+    return chars;
+}
+
 function computeCharCounts(req) {
     const parsed = parseRequestBody(req.requestBody);
 
-    // System prompt chars
-    let systemChars = 0;
-    if (parsed.system) {
-        if (typeof parsed.system === "string") {
-            systemChars = parsed.system.length;
-        } else if (Array.isArray(parsed.system)) {
-            for (const block of parsed.system) {
-                if (block.type === "text" && block.text) systemChars += block.text.length;
-                else systemChars += JSON.stringify(block).length;
-            }
-        } else {
-            systemChars = JSON.stringify(parsed.system).length;
-        }
-    }
-
-    // Tools chars
+    const systemChars = computeSystemChars(parsed.system);
     const toolsChars = parsed.tools ? JSON.stringify(parsed.tools).length : 0;
-
-    // Message history chars (all messages)
-    const messagesChars = parsed.messages
-        ? estimateMessagesCharCount(parsed.messages)
-        : 0;
-
+    const messagesChars = parsed.messages ? estimateMessagesCharCount(parsed.messages) : 0;
     const totalInputChars = systemChars + toolsChars + messagesChars;
 
-    // Output chars from response content blocks
-    let outputChars = 0;
     const responseContent = req.isStreaming
         ? parseStreamingResponse(req.sseEvents)
         : parseNonStreamingResponse(req.responseBody);
-    if (responseContent) {
-        for (const block of responseContent) {
-            if (block.text) outputChars += block.text.length;
-            if (block.input) outputChars += JSON.stringify(block.input).length;
-        }
-    }
+    const outputChars = responseContent ? computeOutputChars(responseContent) : 0;
 
     return { systemChars, toolsChars, messagesChars, totalInputChars, outputChars };
 }
