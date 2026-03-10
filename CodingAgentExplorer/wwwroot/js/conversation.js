@@ -5,7 +5,7 @@ const connection = new signalR.HubConnectionBuilder()
 
 let requests = [];
 let hookEvents = [];
-let showHookEvents = true;
+let showHookEvents = false;
 
 // DOM
 const feed = document.getElementById("conversationFeed");

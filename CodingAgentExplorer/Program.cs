@@ -100,4 +100,18 @@ app.MapFallbackToFile("index.html").RequireHost(DashboardPort5000, DashboardPort
 // YARP reverse proxy (port 8888 only, via Hosts match in appsettings.json)
 app.MapReverseProxy();
 
+// Fallback for port 9999 when no MCP destination is configured (YARP has no route).
+// Returns a JSON-RPC error so Claude Code gets a parseable response instead of an empty body,
+// which would otherwise trigger OAuth discovery and "not authenticated" state.
+app.MapFallback(() => Results.Json(new
+{
+    jsonrpc = "2.0",
+    id = (object?)null,
+    error = new
+    {
+        code = -32603,
+        message = "MCP proxy destination not configured. Set the destination URL in the CodingAgentExplorer dashboard."
+    }
+}, statusCode: 200)).RequireHost("*:9999");
+
 await app.RunAsync();
