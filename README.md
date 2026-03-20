@@ -38,7 +38,10 @@ The MCP Observer acts as a proxy between Claude Code and any HTTP-based MCP serv
 
 ## Read More
 
-Want to learn more about the architecture and design decisions behind this project? Check out the detailed blog post: [Introducing the Coding Agent Explorer .NET](https://nestenius.se/ai/introducing-the-coding-agent-explorer-net/)
+Want to learn more about this project? Check out the blog posts:
+
+- [Introducing the Coding Agent Explorer .NET](https://nestenius.se/ai/introducing-the-coding-agent-explorer-net/)
+- [Exploring Claude Code Hooks with the Coding Agent Explorer (.NET)](https://nestenius.se/ai/exploring-claude-code-hooks-with-the-coding-agent-explorer-net/)
 
 ## Prerequisites
 
@@ -193,6 +196,8 @@ All outputs require the .NET 10 runtime on the target machine. Add `Published/Ho
 ## HookAgent
 
 HookAgent is a small companion CLI tool that acts as a [Claude Code hook](https://docs.anthropic.com/en/docs/claude-code/hooks) command. It bridges Claude Code's hook system and the CodingAgentExplorer dashboard, letting you see every hook event (session start/end, tool calls, permission requests, notifications, and more) appear in the conversation view in real time.
+
+> Read more: [Exploring Claude Code Hooks with the Coding Agent Explorer (.NET)](https://nestenius.se/ai/exploring-claude-code-hooks-with-the-coding-agent-explorer-net/)
 
 ### How it works
 

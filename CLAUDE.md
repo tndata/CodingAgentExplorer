@@ -72,6 +72,11 @@ The destination URL is stored in `McpProxyConfig` (singleton) and triggers a YAR
 - `publish.bat` - Publishes both projects to `Published/` (Windows, win-x64 HookAgent)
 - `publish.sh` - Publishes both projects to `Published/` (detects current platform for HookAgent)
 
+## Blog Posts
+
+- [Introducing the Coding Agent Explorer .NET](https://nestenius.se/ai/introducing-the-coding-agent-explorer-net/) - Overview of the project, architecture, and design decisions
+- [Exploring Claude Code Hooks with the Coding Agent Explorer (.NET)](https://nestenius.se/ai/exploring-claude-code-hooks-with-the-coding-agent-explorer-net/) - Deep dive into the HookAgent and Claude Code hook system integration
+
 ## Writing Style
 
 - Never use em dashes (—) in README.md or any documentation. Use a comma, hyphen, colon, or reword the sentence instead.

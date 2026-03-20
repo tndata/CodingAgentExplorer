@@ -37,7 +37,7 @@
       }
     ],
 
-    "PermissionRequest": [
+    "PermissionRequest": [  
       {
         "matcher": ".*",
         "hooks": [{ "type": "command", "command": "HookAgent/HookAgent.exe", "async": false }]
