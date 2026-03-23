@@ -5,9 +5,9 @@ using System.Text.Json.Nodes;
 // 1. Read all STDIN (Claude Code closes stdin after writing the hook payload)
 var stdinJson = await Console.In.ReadToEndAsync();
 
-// 2. Parse to extract envelope fields
+// 2. Parse to extract envelope fields — invalid JSON is treated as an empty payload
 JsonNode? root = null;
-try { root = JsonNode.Parse(stdinJson); } catch { }
+try { root = JsonNode.Parse(stdinJson); } catch (JsonException) { }
 
 // 3. Collect Claude Code environment variables
 var envVars = new Dictionary<string, string>();
@@ -55,7 +55,7 @@ catch
 }
 
 // 6. Relay stdout/stderr to Claude Code
-if (!string.IsNullOrEmpty(stdout)) Console.WriteLine(stdout);
-if (!string.IsNullOrEmpty(stderr)) Console.Error.WriteLine(stderr);
+if (!string.IsNullOrEmpty(stdout)) await Console.Out.WriteLineAsync(stdout);
+if (!string.IsNullOrEmpty(stderr)) await Console.Error.WriteLineAsync(stderr);
 
 Environment.Exit(exitCode);   // Exit code matters for blocking hooks

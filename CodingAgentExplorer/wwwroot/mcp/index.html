@@ -261,15 +261,21 @@
 
 
         /* Modal */
-        .modal-backdrop {
-            display: none;
+        #helpModal {
+            border: none;
+            padding: 0;
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.6);
             z-index: 100;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            max-height: 100%;
         }
-        .modal-backdrop.open { display: flex; }
+        #helpModal[open] { display: flex; }
+        #helpModal::backdrop { display: none; }
         .modal {
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -318,7 +324,7 @@
     <div class="status">
         <button class="clear-btn" onclick="clearRequests()">Clear</button>
         <span class="separator">|</span>
-        <button class="clear-btn" onclick="document.getElementById('helpModal').classList.add('open')">Help</button>
+        <button class="clear-btn" onclick="document.getElementById('helpModal').showModal()">Help</button>
         <span class="separator">|</span>
         <span class="status-dot" id="connDot"></span>
         <span id="connText">Disconnected</span>
@@ -335,7 +341,7 @@
     <div class="status-text inactive" id="statusText">No destination configured. Port 9999 is not active.</div>
 </div>
 
-<div class="modal-backdrop" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')" onkeydown="if(event.key==='Escape')this.classList.remove('open')" role="dialog" aria-modal="true">
+<dialog id="helpModal" onclick="if(event.target===this)this.close()">
     <div class="modal">
         <h2>&#x1F50C; Registering the MCP Proxy in Claude Code</h2>
         <p>The MCP Observer sits between Claude Code and the real MCP server. Set the destination URL above, then register the proxy as an MCP server in Claude Code using this command:</p>
@@ -355,9 +361,9 @@
         <code>https://mcp.context7.com/mcp</code>
         <p style="margin-top:-4px">Sample prompt: <em style="color:var(--text)">"How do I set up middleware in Next.js 15? use context7"</em></p>
 
-        <button class="clear-btn modal-close" onclick="document.getElementById('helpModal').classList.remove('open')">Close</button>
+        <button class="clear-btn modal-close" onclick="document.getElementById('helpModal').close()">Close</button>
     </div>
-</div>
+</dialog>
 
 
 <div class="table-wrap">
@@ -613,7 +619,7 @@
     }
 
     function esc(s) {
-        return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        return String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
     }
 
     async function setDestination() {

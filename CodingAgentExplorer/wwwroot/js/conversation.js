@@ -87,10 +87,13 @@ connection.on("NewRequest", (req) => {
 });
 
 // Start
-connection.start().then(() => {
+try {
+    await connection.start();
     statusDot.className = "status-dot connected";
     statusText.textContent = "Connected";
-}).catch(err => console.error("SignalR connection error:", err));
+} catch (err) {
+    console.error("SignalR connection error:", err);
+}
 
 // ---------- Rendering ----------
 
@@ -594,7 +597,8 @@ function buildToolUseBlock(block) {
 
     const header = document.createElement("div");
     header.className = "tool-header";
-    header.innerHTML = `<span class="arrow">&#9654;</span> Tool: ${esc(block.name || "unknown")}${block.id ? ` <span style="opacity:0.5">(${esc(block.id)})</span>` : ""}`;
+    const idSuffix = block.id ? ` <span style="opacity:0.5">(${esc(block.id)})</span>` : "";
+    header.innerHTML = `<span class="arrow">&#9654;</span> Tool: ${esc(block.name || "unknown")}${idSuffix}`;
 
     const body = document.createElement("div");
     body.className = "tool-body";
@@ -718,7 +722,7 @@ function handleBlockDelta(contentBlocks, data) {
 function handleBlockStop(contentBlocks, data) {
     const idx = data.index ?? (contentBlocks.length - 1);
     const block = contentBlocks[idx];
-    if (block && block._inputJson) {
+    if (block?._inputJson) {
         try { block.input = JSON.parse(block._inputJson); } catch { }
         delete block._inputJson;
     }
@@ -726,7 +730,7 @@ function handleBlockStop(contentBlocks, data) {
 
 function finalizeContentBlocks(contentBlocks) {
     for (const block of contentBlocks) {
-        if (block && block._inputJson) {
+        if (block?._inputJson) {
             try { block.input = JSON.parse(block._inputJson); } catch { }
             delete block._inputJson;
         }
@@ -777,7 +781,6 @@ function buildDetailsSection(req) {
 
 function renderDetails(container, req) {
     const tabs = ["request", "response", "events", "tokens", "statistics"];
-    let activeTab = "request";
 
     const tabBar = document.createElement("div");
     tabBar.className = "detail-tabs";
@@ -786,7 +789,6 @@ function renderDetails(container, req) {
     codeEl.className = "detail-code";
 
     function showTab(tab) {
-        activeTab = tab;
         tabBar.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
 
         switch (tab) {
@@ -974,8 +976,8 @@ function autoScroll() {
 
 function updateCount() {
     const label = requests.length === 1 ? "exchange" : "exchanges";
-    requestCount.textContent = `${requests.length} ${label}` +
-        (hookEvents.length > 0 ? `, ${hookEvents.length} hook${hookEvents.length === 1 ? "" : "s"}` : "");
+    const hookSuffix = hookEvents.length > 0 ? `, ${hookEvents.length} hook${hookEvents.length === 1 ? "" : "s"}` : "";
+    requestCount.textContent = `${requests.length} ${label}${hookSuffix}`;
 }
 
 // ---------- Hook Event Cards ----------
@@ -1046,7 +1048,7 @@ function renderHookEventBody(container, evt) {
     }
 
     // Stdout — rendered as a distinct terminal-style output box
-    if (evt.stdout && evt.stdout.trim()) {
+    if (evt.stdout?.trim()) {
         const stdoutWrapper = document.createElement("div");
         stdoutWrapper.className = "hook-stdout";
         const label = document.createElement("span");

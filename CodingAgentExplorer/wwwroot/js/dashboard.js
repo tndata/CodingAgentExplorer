@@ -67,12 +67,13 @@ connection.on("NewRequest", (req) => {
 });
 
 // Start connection
-connection.start().then(() => {
+try {
+    await connection.start();
     statusDot.className = "status-dot connected";
     statusText.textContent = "Connected";
-}).catch(err => {
+} catch (err) {
     console.error("SignalR connection error:", err);
-});
+}
 
 // Render table
 function renderTable() {
