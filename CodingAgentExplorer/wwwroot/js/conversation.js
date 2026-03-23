@@ -976,7 +976,8 @@ function autoScroll() {
 
 function updateCount() {
     const label = requests.length === 1 ? "exchange" : "exchanges";
-    const hookSuffix = hookEvents.length > 0 ? `, ${hookEvents.length} hook${hookEvents.length === 1 ? "" : "s"}` : "";
+    const hookLabel = hookEvents.length === 1 ? "hook" : "hooks";
+    const hookSuffix = hookEvents.length > 0 ? `, ${hookEvents.length} ${hookLabel}` : "";
     requestCount.textContent = `${requests.length} ${label}${hookSuffix}`;
 }
 

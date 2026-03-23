@@ -341,7 +341,7 @@
     <div class="status-text inactive" id="statusText">No destination configured. Port 9999 is not active.</div>
 </div>
 
-<dialog id="helpModal" onclick="if(event.target===this)this.close()">
+<dialog id="helpModal">
     <div class="modal">
         <h2>&#x1F50C; Registering the MCP Proxy in Claude Code</h2>
         <p>The MCP Observer sits between Claude Code and the real MCP server. Set the destination URL above, then register the proxy as an MCP server in Claude Code using this command:</p>
@@ -403,9 +403,13 @@
     </div>
 </div>
 
-<script>
+<script type="module">
     const requests = [];
     let selectedId = null;
+
+    const helpModal = document.getElementById('helpModal');
+    helpModal.addEventListener('click', e => { if (e.target === helpModal) helpModal.close(); });
+    helpModal.addEventListener('keydown', e => { if (e.key === 'Escape') helpModal.close(); });
 
     // SignalR
     const conn = new signalR.HubConnectionBuilder()
@@ -443,7 +447,8 @@
 
     conn.onreconnecting(() => setConnected(false));
     conn.onreconnected(() => setConnected(true));
-    conn.start().then(() => setConnected(true));
+    await conn.start();
+    setConnected(true);
 
     function addOrUpdate(r, scrollToBottom) {
         const idx = requests.findIndex(x => x.id === r.id);
@@ -488,7 +493,7 @@
             const status = r.statusCode
                 ? `<span class="${statusClass}">${r.statusCode}</span>`
                 : '<span class="status-pending">—</span>';
-            const dur = r.durationMs != null ? `${Math.round(r.durationMs)} ms` : '—';
+            const dur = r.durationMs == null ? '—' : `${Math.round(r.durationMs)} ms`;
             const sel = r.id === selectedId ? ' selected' : '';
             return `<tr class="${sel}" onclick="selectRow('${r.id}')">
                 <td class="time">${time}</td>

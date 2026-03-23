@@ -17,8 +17,5 @@ public class McpRequestStore
 
     public List<ProxiedRequest> GetAll() => _requests.ToList();
 
-    public void Clear()
-    {
-        while (_requests.TryDequeue(out _)) { }
-    }
+    public void Clear() => _requests.Clear();
 }
