@@ -179,6 +179,7 @@ function renderDetailTab(req) {
             break;
         case "request":
             detailContent.innerHTML = renderRequest(req);
+            setupSectionCopyButtons();
             break;
         case "response":
             detailContent.innerHTML = renderResponse(req);
@@ -189,7 +190,35 @@ function renderDetailTab(req) {
     }
 }
 
+function setupSectionCopyButtons() {
+    detailContent.querySelectorAll(".section-copy-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const pre = btn.closest(".detail-section").querySelector("pre");
+            if (!pre) return;
+            navigator.clipboard.writeText(pre.textContent).then(() => {
+                btn.textContent = "Copied!";
+                btn.classList.add("copied");
+                setTimeout(() => {
+                    btn.textContent = "Copy";
+                    btn.classList.remove("copied");
+                }, 1500);
+            });
+        });
+    });
+}
+
+function parseSessionId(req) {
+    try {
+        const body = JSON.parse(req.requestBody);
+        const userId = JSON.parse(body.metadata.user_id);
+        return userId.session_id || null;
+    } catch {
+        return null;
+    }
+}
+
 function renderOverview(req) {
+    const sessionId = parseSessionId(req);
     return `
         <div class="detail-section">
             <h3>General</h3>
@@ -202,6 +231,7 @@ function renderOverview(req) {
                 <dt>Model</dt><dd>${esc(req.model || "-")}</dd>
                 <dt>Streaming</dt><dd>${req.isStreaming ? "Yes" : "No"}</dd>
                 <dt>Max Tokens</dt><dd>${req.maxTokens || "-"}</dd>
+                ${sessionId ? `<dt>Session ID</dt><dd>${esc(sessionId)}</dd>` : ""}
             </dl>
         </div>
         <div class="detail-section">
@@ -237,11 +267,17 @@ function renderRequest(req) {
 
     return `
         <div class="detail-section">
-            <h3>Request Headers</h3>
+            <div class="section-header">
+                <h3>Request Headers</h3>
+                <button class="section-copy-btn">Copy</button>
+            </div>
             <pre class="code-block">${esc(headers) || "(none)"}</pre>
         </div>
         <div class="detail-section">
-            <h3>Request Body</h3>
+            <div class="section-header">
+                <h3>Request Body</h3>
+                <button class="section-copy-btn">Copy</button>
+            </div>
             <pre class="code-block">${esc(body) || "(empty)"}</pre>
         </div>`;
 }
