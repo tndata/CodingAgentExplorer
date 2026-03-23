@@ -7,7 +7,7 @@ var stdinJson = await Console.In.ReadToEndAsync();
 
 // 2. Parse to extract envelope fields — invalid JSON is treated as an empty payload
 JsonNode? root = null;
-try { root = JsonNode.Parse(stdinJson); } catch (JsonException) { }
+try { root = JsonNode.Parse(stdinJson); } catch (JsonException) { /* invalid JSON — root stays null */ }
 
 // 3. Collect Claude Code environment variables
 var envVars = new Dictionary<string, string>();
