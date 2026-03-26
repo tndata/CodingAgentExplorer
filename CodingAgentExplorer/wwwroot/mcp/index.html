@@ -648,11 +648,11 @@
         await conn.invoke('ClearMcp');
     }
 
-    window.setDestination = setDestination;
-    window.clearDestination = clearDestination;
-    window.clearRequests = clearRequests;
-    window.selectRow = selectRow;
-    window.setView = setView;
+    globalThis.setDestination = setDestination;
+    globalThis.clearDestination = clearDestination;
+    globalThis.clearRequests = clearRequests;
+    globalThis.selectRow = selectRow;
+    globalThis.setView = setView;
 </script>
 </body>
 </html>
