@@ -190,20 +190,24 @@ function renderDetailTab(req) {
     }
 }
 
+function resetCopyButton(btn) {
+    btn.textContent = "Copy";
+    btn.classList.remove("copied");
+}
+
+function onCopyButtonClick(btn) {
+    const pre = btn.closest(".detail-section").querySelector("pre");
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.textContent).then(() => {
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        setTimeout(() => resetCopyButton(btn), 1500);
+    });
+}
+
 function setupSectionCopyButtons() {
     detailContent.querySelectorAll(".section-copy-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const pre = btn.closest(".detail-section").querySelector("pre");
-            if (!pre) return;
-            navigator.clipboard.writeText(pre.textContent).then(() => {
-                btn.textContent = "Copied!";
-                btn.classList.add("copied");
-                setTimeout(() => {
-                    btn.textContent = "Copy";
-                    btn.classList.remove("copied");
-                }, 1500);
-            });
-        });
+        btn.addEventListener("click", () => onCopyButtonClick(btn));
     });
 }
 
