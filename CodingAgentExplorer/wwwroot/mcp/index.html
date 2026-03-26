@@ -647,6 +647,12 @@
     async function clearRequests() {
         await conn.invoke('ClearMcp');
     }
+
+    window.setDestination = setDestination;
+    window.clearDestination = clearDestination;
+    window.clearRequests = clearRequests;
+    window.selectRow = selectRow;
+    window.setView = setView;
 </script>
 </body>
 </html>
