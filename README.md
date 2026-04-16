@@ -42,6 +42,7 @@ Want to learn more about this project? Check out the blog posts:
 
 - [Introducing the Coding Agent Explorer .NET](https://nestenius.se/ai/introducing-the-coding-agent-explorer-net/)
 - [Exploring Claude Code Hooks with the Coding Agent Explorer (.NET)](https://nestenius.se/ai/exploring-claude-code-hooks-with-the-coding-agent-explorer-net/)
+- [Visualizing Claude Code MCP Requests with Coding Agent Explorer](https://nestenius.se/ai/visualizing-claude-code-mcp-requests-with-coding-agent-explorer/)
 
 ## Prerequisites
 
