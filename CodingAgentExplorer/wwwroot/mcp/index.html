@@ -5,21 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MCP Observer - Coding Agent Explorer</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" integrity="sha512-7SRCYIJtR6F8ocwW7UxW6wGKqbSyqREDbfCORCbGLatU0iugBLwyOXpzhkPyHIFdBO0K2VCu57fvP2Twgx1o2A==" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="../css/theme.css">
+    <script src="../js/theme.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --bg: #0d1117;
-            --bg-secondary: #161b22;
-            --bg-tertiary: #21262d;
-            --border: #30363d;
-            --text: #e6edf3;
-            --text-secondary: #8b949e;
-            --accent: #58a6ff;
-            --green: #3fb950;
-            --yellow: #d29922;
-            --red: #f85149;
-            --purple: #bc8cff;
-        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
             font-size: 14px;
@@ -114,7 +103,7 @@
             margin-top: 8px;
         }
         .status-text.active { color: var(--green); }
-        .status-text.inactive { color: var(--yellow); }
+        .status-text.inactive { color: var(--orange); }
 
 
         /* Table */
@@ -264,7 +253,7 @@
             border: none;
             padding: 0;
             position: fixed; inset: 0;
-            background: rgba(0,0,0,0.6);
+            background: var(--overlay-bg);
             z-index: 100;
             align-items: center;
             justify-content: center;
@@ -324,6 +313,8 @@
         <button class="clear-btn" onclick="clearRequests()">Clear</button>
         <span class="separator">|</span>
         <button class="clear-btn" onclick="document.getElementById('helpModal').showModal()">Help</button>
+        <span class="separator">|</span>
+        <button id="themeToggle" class="theme-toggle-btn" title="Toggle light/dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
         <span class="separator">|</span>
         <span class="status-dot" id="connDot"></span>
         <span id="connText">Disconnected</span>
