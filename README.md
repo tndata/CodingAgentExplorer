@@ -44,6 +44,10 @@ Want to learn more about this project? Check out the blog posts:
 - [Exploring Claude Code Hooks with the Coding Agent Explorer (.NET)](https://nestenius.se/ai/exploring-claude-code-hooks-with-the-coding-agent-explorer-net/)
 - [Visualizing Claude Code MCP Requests with Coding Agent Explorer](https://nestenius.se/ai/visualizing-claude-code-mcp-requests-with-coding-agent-explorer/)
 
+For a detailed technical deep dive into the internal architecture, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+For API reference documentation, see [docs/API.md](docs/API.md).
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) or later
@@ -298,6 +302,10 @@ Hook events appear inline in the Conversation View, interleaved with API request
 - SignalR for real-time dashboard updates
 - Vanilla HTML/JS/CSS frontend (no build step required)
 - Single NuGet dependency (`Yarp.ReverseProxy`)
+
+For a detailed technical deep dive into the internal architecture, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+For API reference documentation, see [docs/API.md](docs/API.md).
 
 ## Project Structure
 
