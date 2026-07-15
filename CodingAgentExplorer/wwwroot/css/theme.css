@@ -1,0 +1,74 @@
+:root {
+    --bg: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-secondary: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --purple: #bc8cff;
+    --accent-subtle: rgba(88,166,255,0.1);
+    --accent-muted: rgba(88,166,255,0.2);
+    --accent-border: rgba(88,166,255,0.3);
+    --purple-subtle: rgba(188,140,255,0.1);
+    --purple-muted: rgba(188,140,255,0.15);
+    --purple-strong: rgba(188,140,255,0.2);
+    --green-faint: rgba(63,185,80,0.07);
+    --green-subtle: rgba(63,185,80,0.1);
+    --green-muted: rgba(63,185,80,0.15);
+    --green-border: rgba(63,185,80,0.25);
+    --orange-subtle: rgba(210,153,34,0.15);
+    --orange-border: rgba(210,153,34,0.3);
+    --red-subtle: rgba(248,81,73,0.12);
+    --red-border: rgba(248,81,73,0.3);
+    --shadow: rgba(0,0,0,0.4);
+    --overlay-bg: rgba(0,0,0,0.6);
+}
+
+[data-theme="light"] {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #eaeef2;
+    --border: #d0d7de;
+    --text: #24292f;
+    --text-secondary: #57606a;
+    --accent: #0969da;
+    --green: #1a7f37;
+    --red: #cf222e;
+    --orange: #9a6700;
+    --purple: #8250df;
+    --accent-subtle: rgba(9,105,218,0.15);
+    --accent-muted: rgba(9,105,218,0.25);
+    --accent-border: rgba(9,105,218,0.4);
+    --purple-subtle: rgba(130,80,223,0.15);
+    --purple-muted: rgba(130,80,223,0.22);
+    --purple-strong: rgba(130,80,223,0.28);
+    --green-faint: rgba(26,127,55,0.12);
+    --green-subtle: rgba(26,127,55,0.18);
+    --green-muted: rgba(26,127,55,0.24);
+    --green-border: rgba(26,127,55,0.4);
+    --orange-subtle: rgba(154,103,0,0.22);
+    --orange-border: rgba(154,103,0,0.4);
+    --red-subtle: rgba(207,34,46,0.18);
+    --red-border: rgba(207,34,46,0.4);
+    --shadow: rgba(0,0,0,0.15);
+    --overlay-bg: rgba(0,0,0,0.4);
+}
+
+.theme-toggle-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    line-height: 1;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--bg-tertiary);
+}

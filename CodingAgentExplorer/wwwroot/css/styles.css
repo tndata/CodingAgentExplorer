@@ -4,20 +4,6 @@
     padding: 0;
 }
 
-:root {
-    --bg: #0d1117;
-    --bg-secondary: #161b22;
-    --bg-tertiary: #21262d;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-secondary: #8b949e;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --red: #f85149;
-    --orange: #d29922;
-    --purple: #bc8cff;
-}
-
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
     background: var(--bg);
@@ -171,7 +157,7 @@ main {
 }
 
 .request-list tbody tr.selected {
-    background: rgba(88, 166, 255, 0.1);
+    background: var(--accent-subtle);
 }
 
 .col-time { width: 80px; }
@@ -194,12 +180,12 @@ main {
 }
 
 .badge-stream {
-    background: rgba(188, 140, 255, 0.2);
+    background: var(--purple-strong);
     color: var(--purple);
 }
 
 .badge-sync {
-    background: rgba(88, 166, 255, 0.2);
+    background: var(--accent-muted);
     color: var(--accent);
 }
 
