@@ -10,6 +10,7 @@ With Coding Agent Explorer, you can:
 - Follow the conversation as a readable chat-style timeline
 - Capture and inspect MCP tool calls between Claude Code and HTTP-based MCP servers
 - Monitor Claude Code hook events alongside API traffic
+- Switch the dashboard between light and dark themes, with your choice remembered across sessions
 
 
 ## Dashboard

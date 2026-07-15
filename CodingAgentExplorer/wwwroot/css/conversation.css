@@ -4,20 +4,6 @@
     padding: 0;
 }
 
-:root {
-    --bg: #0d1117;
-    --bg-secondary: #161b22;
-    --bg-tertiary: #21262d;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-secondary: #8b949e;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --red: #f85149;
-    --orange: #d29922;
-    --purple: #bc8cff;
-}
-
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
     background: var(--bg);
@@ -204,7 +190,7 @@ main {
     line-height: 1.8;
     white-space: nowrap;
     z-index: 100;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 12px var(--shadow);
     color: var(--text-secondary);
 }
 
@@ -521,7 +507,7 @@ main {
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    background: rgba(188, 140, 255, 0.1);
+    background: var(--purple-subtle);
     font-size: 12px;
     font-weight: 600;
     color: var(--purple);
@@ -529,7 +515,7 @@ main {
 }
 
 .content-tool-use .tool-header:hover {
-    background: rgba(188, 140, 255, 0.15);
+    background: var(--purple-muted);
 }
 
 .content-tool-use .tool-header .arrow {
@@ -570,7 +556,7 @@ main {
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    background: rgba(63, 185, 80, 0.1);
+    background: var(--green-subtle);
     font-size: 12px;
     font-weight: 600;
     color: var(--green);
@@ -578,7 +564,7 @@ main {
 }
 
 .content-tool-result .tool-result-header:hover {
-    background: rgba(63, 185, 80, 0.15);
+    background: var(--green-muted);
 }
 
 .content-tool-result .tool-result-header .arrow {
@@ -739,32 +725,32 @@ main {
     text-transform: uppercase;
     padding: 2px 7px;
     border-radius: 10px;
-    background: rgba(210, 153, 34, 0.15);
+    background: var(--orange-subtle);
     color: var(--orange);
-    border: 1px solid rgba(210, 153, 34, 0.3);
+    border: 1px solid var(--orange-border);
     white-space: nowrap;
 }
 
 /* Per-event color overrides */
 .hook-badge-sessionstart,
 .hook-badge-sessionend {
-    background: rgba(88, 166, 255, 0.12);
+    background: var(--accent-subtle);
     color: var(--accent);
-    border-color: rgba(88, 166, 255, 0.3);
+    border-color: var(--accent-border);
 }
 
 .hook-badge-stop {
-    background: rgba(248, 81, 73, 0.12);
+    background: var(--red-subtle);
     color: var(--red);
-    border-color: rgba(248, 81, 73, 0.3);
+    border-color: var(--red-border);
 }
 
 .hook-badge-taskcompleted,
 .hook-badge-subagentstart,
 .hook-badge-subagentstopp {
-    background: rgba(63, 185, 80, 0.12);
+    background: var(--green-subtle);
     color: var(--green);
-    border-color: rgba(63, 185, 80, 0.3);
+    border-color: var(--green-border);
 }
 
 .hook-meta {
@@ -850,8 +836,8 @@ main {
 .hook-stdout-value {
     margin: 0;
     padding: 6px 10px;
-    background: rgba(63, 185, 80, 0.07);
-    border: 1px solid rgba(63, 185, 80, 0.25);
+    background: var(--green-faint);
+    border: 1px solid var(--green-border);
     border-left: 3px solid var(--green);
     border-radius: 4px;
     font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
