@@ -28,6 +28,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddSingleton<RequestStore>();
 builder.Services.AddSingleton<HookEventStore>();
 builder.Services.AddSingleton<McpProxyConfig>();
+builder.Services.AddSingleton<AnthropicProxyConfig>();
 builder.Services.AddSingleton<McpRequestStore>();
 builder.Services.AddSingleton<ITransformProvider, CaptureTransformProvider>();
 builder.Services.AddSignalR()
@@ -42,6 +43,14 @@ builder.Services.AddReverseProxy();
 builder.Services.AddSingleton<IProxyConfigProvider, DynamicProxyConfigProvider>();
 
 var app = builder.Build();
+
+// Initialize AnthropicProxyConfig with the default destination from config
+var anthropicConfig = app.Services.GetRequiredService<AnthropicProxyConfig>();
+var defaultDestination = ResolveDefaultAnthropicDestination(app.Configuration, app.Logger);
+if (!string.IsNullOrWhiteSpace(defaultDestination))
+{
+    anthropicConfig.SetDestination(defaultDestination);
+}
 
 // Serve static files only on dashboard ports
 app.UseWhen(
@@ -95,6 +104,21 @@ app.MapPost("/api/mcp-destination", async (
 })
 .RequireHost(DashboardPort5000, DashboardPort5001);
 
+// Anthropic destination config endpoints
+app.MapGet("/api/anthropic-destination", (AnthropicProxyConfig anthropicConfig) =>
+    Results.Ok(new { destinationUrl = anthropicConfig.DestinationUrl }))
+.RequireHost(DashboardPort5000, DashboardPort5001);
+
+app.MapPost("/api/anthropic-destination", async (
+    HttpContext ctx,
+    AnthropicProxyConfig anthropicConfig) =>
+{
+    var body = await ctx.Request.ReadFromJsonAsync<McpDestinationRequest>();
+    anthropicConfig.SetDestination(body?.Url);
+    return Results.Ok();
+})
+.RequireHost(DashboardPort5000, DashboardPort5001);
+
 app.MapFallbackToFile("index.html").RequireHost(DashboardPort5000, DashboardPort5001);
 
 // YARP reverse proxy (port 8888 only, via Hosts match in appsettings.json)
@@ -115,3 +139,26 @@ app.MapFallback(() => Results.Json(new
 }, statusCode: 200)).RequireHost("*:9999");
 
 await app.RunAsync();
+
+static string? ResolveDefaultAnthropicDestination(IConfiguration configuration, ILogger logger)
+{
+    var configured = Environment.GetEnvironmentVariable("CODING_AGENT_EXPLORER_UPSTREAM_URL");
+
+    if (string.IsNullOrWhiteSpace(configured))
+    {
+        configured = configuration
+            .GetSection("ReverseProxy:Clusters:anthropic-cluster:Destinations")
+            .GetChildren()
+            .Select(d => d["Address"])
+            .FirstOrDefault(a => !string.IsNullOrWhiteSpace(a));
+    }
+
+    if (!string.IsNullOrWhiteSpace(configured)
+        && Uri.TryCreate(configured, UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+    {
+        return uri.GetLeftPart(UriPartial.Authority);
+    }
+
+    return null; // Will use default fallback in DynamicProxyConfigProvider
+}

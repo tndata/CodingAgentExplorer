@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anthropic Proxy Config - Coding Agent Explorer</title>
+    <link rel="stylesheet" href="../css/theme.css">
+    <script src="../js/theme.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-left { display: flex; flex-direction: column; gap: 2px; }
+        .header-title { font-size: 16px; font-weight: 600; }
+        .toolbar { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+        .toolbar-link { color: var(--accent); text-decoration: none; }
+        .toolbar-link:hover { text-decoration: underline; }
+        .toolbar-active { color: var(--text); font-weight: 600; }
+        .toolbar-sep { color: var(--border); }
+        .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+        .separator { color: var(--border); }
+
+        /* Config panel */
+        .config-panel {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            margin: 20px;
+            border-radius: 8px;
+        }
+        .config-panel label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 8px;
+        }
+        .config-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .config-row input {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+            padding: 7px 12px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            outline: none;
+        }
+        .config-row input:focus { border-color: var(--accent); }
+        .config-row input::placeholder { color: var(--text-secondary); }
+        button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 7px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        button:hover { opacity: 0.85; }
+        button.clear-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+        button.clear-btn:hover { color: var(--text); }
+        .status-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+        .status-text.active { color: var(--green); }
+        .status-text.inactive { color: var(--orange); }
+
+        /* Content */
+        .content {
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            flex: 1;
+        }
+        .info-block {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info-block h2 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .info-block p {
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .info-block code {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12px;
+            color: var(--accent);
+        }
+        .info-block pre {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 12px;
+            color: var(--text);
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-left">
+        <nav class="toolbar">
+            <a href="/" class="toolbar-link">Home</a>
+            <span class="toolbar-sep">|</span>
+            <a href="/inspector/index.html" class="toolbar-link">Inspector</a>
+            <span class="toolbar-sep">|</span>
+            <a href="/conversation/index.html" class="toolbar-link">Conversation</a>
+            <span class="toolbar-sep">|</span>
+            <a href="/mcp/index.html" class="toolbar-link">MCP Observer</a>
+            <span class="toolbar-sep">|</span>
+            <span class="toolbar-active">Anthropic Config</span>
+        </nav>
+        <span class="header-title">🤖 Anthropic Proxy Configuration</span>
+    </div>
+    <div class="status">
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light/dark theme" title="Toggle light/dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
+    </div>
+</div>
+
+<div class="content">
+    <div class="config-panel">
+        <label for="destUrl">Anthropic API Destination URL</label>
+        <div class="config-row">
+            <input type="text" id="destUrl" placeholder="https://api.anthropic.com" />
+            <button onclick="setDestination()">Set</button>
+            <button class="clear-btn" onclick="clearDestination()">Clear</button>
+        </div>
+        <div class="status-text" id="statusText">Loading current configuration...</div>
+    </div>
+
+    <div class="info-block">
+        <h2>📋 About</h2>
+        <p>
+            This page allows you to configure the upstream Anthropic API destination for the proxy running on port 8888.
+            By default, the proxy forwards requests to <code>https://api.anthropic.com</code>, but you can override this
+            to point to a different Anthropic-compatible endpoint (e.g., a local mock server, alternative provider, or custom gateway).
+        </p>
+    </div>
+
+    <div class="info-block">
+        <h2>🔧 Usage</h2>
+        <p>
+            To use the Coding Agent Explorer proxy with Claude Code, set the <code>ANTHROPIC_BASE_URL</code> environment variable:
+        </p>
+        <pre>export ANTHROPIC_BASE_URL=http://localhost:8888</pre>
+        <p>
+            Then run Claude Code normally. All API requests will flow through the proxy on port 8888 and be forwarded to the destination configured above.
+        </p>
+    </div>
+
+    <div class="info-block">
+        <h2>⚙️ Configuration Sources</h2>
+        <p>The Anthropic destination URL can be configured via:</p>
+        <ol style="color: var(--text-secondary); margin-left: 20px; line-height: 1.8;">
+            <li>This web page (runtime configuration, highest priority)</li>
+            <li>Environment variable: <code>CODING_AGENT_EXPLORER_UPSTREAM_URL</code></li>
+            <li>Configuration file: <code>appsettings.json</code></li>
+            <li>Default fallback: <code>https://api.anthropic.com</code></li>
+        </ol>
+    </div>
+</div>
+
+<script>
+    let currentDestination = null;
+
+    async function loadCurrentConfig() {
+        try {
+            const response = await fetch('/api/anthropic-destination');
+            const data = await response.json();
+            currentDestination = data.destinationUrl;
+            
+            const input = document.getElementById('destUrl');
+            const status = document.getElementById('statusText');
+            
+            if (currentDestination) {
+                input.value = currentDestination;
+                status.textContent = `Current destination: ${currentDestination}`;
+                status.className = 'status-text active';
+            } else {
+                input.placeholder = 'https://api.anthropic.com';
+                status.textContent = 'Using default destination: https://api.anthropic.com';
+                status.className = 'status-text inactive';
+            }
+        } catch (error) {
+            console.error('Failed to load current config:', error);
+            document.getElementById('statusText').textContent = 'Failed to load configuration';
+            document.getElementById('statusText').className = 'status-text inactive';
+        }
+    }
+
+    async function setDestination() {
+        const input = document.getElementById('destUrl');
+        const url = input.value.trim();
+        
+        if (!url) {
+            alert('Please enter a destination URL');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/anthropic-destination', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+
+            if (response.ok) {
+                await loadCurrentConfig();
+                console.log('Anthropic destination updated:', url);
+            } else {
+                alert('Failed to set destination');
+            }
+        } catch (error) {
+            console.error('Failed to set destination:', error);
+            alert('Failed to set destination');
+        }
+    }
+
+    async function clearDestination() {
+        try {
+            const response = await fetch('/api/anthropic-destination', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: null })
+            });
+
+            if (response.ok) {
+                await loadCurrentConfig();
+                console.log('Anthropic destination cleared');
+            } else {
+                alert('Failed to clear destination');
+            }
+        } catch (error) {
+            console.error('Failed to clear destination:', error);
+            alert('Failed to clear destination');
+        }
+    }
+
+    // Load config on page load
+    loadCurrentConfig();
+
+    // Allow Enter key in input field
+    document.getElementById('destUrl').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') setDestination();
+    });
+</script>
+
+</body>
+</html>
