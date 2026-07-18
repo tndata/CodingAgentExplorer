@@ -193,6 +193,18 @@ public class CaptureTransformProvider : ITransformProvider
         foreach (var header in proxyResponse.Headers
             .Where(header => !clientResponse.Headers.ContainsKey(header.Key)))
         {
+            if (IsHopByHopHeader(header.Key))
+                continue;
+
+            clientResponse.Headers[header.Key] = header.Value.ToArray();
+        }
+
+        foreach (var header in proxyResponse.Content.Headers
+            .Where(header => !clientResponse.Headers.ContainsKey(header.Key)))
+        {
+            if (IsHopByHopHeader(header.Key))
+                continue;
+
             clientResponse.Headers[header.Key] = header.Value.ToArray();
         }
 
@@ -246,6 +258,19 @@ public class CaptureTransformProvider : ITransformProvider
 
         stopwatch.Stop();
         proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+    }
+
+    private static bool IsHopByHopHeader(string headerName)
+    {
+        return headerName.Equals("Connection", StringComparison.OrdinalIgnoreCase)
+            || headerName.Equals("Keep-Alive", StringComparison.OrdinalIgnoreCase)
+            || headerName.Equals("Proxy-Authenticate", StringComparison.OrdinalIgnoreCase)
+            || headerName.Equals("Proxy-Authorization", StringComparison.OrdinalIgnoreCase)
+            || headerName.Equals("TE", StringComparison.OrdinalIgnoreCase)
+            || headerName.Equals("Trailer", StringComparison.OrdinalIgnoreCase)
+            || headerName.Equals("Transfer-Encoding", StringComparison.OrdinalIgnoreCase)
+            || headerName.Equals("Upgrade", StringComparison.OrdinalIgnoreCase)
+            || headerName.Equals("Content-Length", StringComparison.OrdinalIgnoreCase);
     }
 
     private static async Task HandleNonStreamingResponseAsync(
