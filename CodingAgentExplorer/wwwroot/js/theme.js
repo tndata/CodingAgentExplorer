@@ -1,8 +1,8 @@
 (function () {
     const stored = localStorage.getItem('theme');
-    const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    const prefersLight = window.matchMedia?.('(prefers-color-scheme: light)').matches;
     const theme = stored || (prefersLight ? 'light' : 'dark');
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.dataset.theme = theme;
 
     function updateIcon(t) {
         const btn = document.getElementById('themeToggle');
@@ -10,13 +10,13 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        updateIcon(document.documentElement.getAttribute('data-theme'));
+        updateIcon(document.documentElement.dataset.theme);
     });
 
     window.toggleTheme = function () {
-        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const current = document.documentElement.dataset.theme || 'dark';
         const next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
+        document.documentElement.dataset.theme = next;
         localStorage.setItem('theme', next);
         updateIcon(next);
     };
