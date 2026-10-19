@@ -963,7 +963,7 @@ function copyExchangeJson(req, btn) {
             btn.textContent = "Copy JSON";
             btn.classList.remove("copied");
         }, 1500);
-    });
+    }).catch(err => console.error("Copy failed:", err));
 }
 
 // ---------- Helpers ----------

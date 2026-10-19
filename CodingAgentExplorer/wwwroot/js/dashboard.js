@@ -151,7 +151,7 @@ document.getElementById("copyJsonBtn").addEventListener("click", () => {
             btn.textContent = "Copy JSON";
             btn.classList.remove("copied");
         }, 1500);
-    });
+    }).catch(err => console.error("Copy failed:", err));
 });
 
 closeDetail.addEventListener("click", () => {
@@ -202,7 +202,7 @@ function onCopyButtonClick(btn) {
         btn.textContent = "Copied!";
         btn.classList.add("copied");
         setTimeout(() => resetCopyButton(btn), 1500);
-    });
+    }).catch(err => console.error("Copy failed:", err));
 }
 
 function setupSectionCopyButtons() {
