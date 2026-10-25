@@ -197,7 +197,7 @@ All outputs require the .NET 10 runtime on the target machine. Add `Published/Ho
 
 ## HookAgent
 
-HookAgent is a small companion CLI tool that acts as a [Claude Code hook](https://docs.anthropic.com/en/docs/claude-code/hooks) command. It bridges Claude Code's hook system and the CodingAgentExplorer dashboard, letting you see every hook event (session start/end, tool calls, permission requests, notifications, and more) appear in the conversation view in real time.
+HookAgent is a small companion CLI tool that acts as a [Claude Code hook](https://code.claude.com/docs/en/hooks) command. It bridges Claude Code's hook system and the CodingAgentExplorer dashboard, letting you see every hook event (session start/end, tool calls, permission requests, notifications, and more) appear in the conversation view in real time.
 
 > Read more: [Exploring Claude Code Hooks with the Coding Agent Explorer (.NET)](https://nestenius.se/ai/exploring-claude-code-hooks-with-the-coding-agent-explorer-net/)
 
@@ -295,7 +295,7 @@ Hook events appear inline in the Conversation View, interleaved with API request
                      Real-time via SignalR
 ```
 
-- ASP.NET Core with [YARP](https://github.com/microsoft/reverse-proxy) reverse proxy
+- ASP.NET Core with [YARP](https://github.com/dotnet/yarp) reverse proxy
 - SignalR for real-time dashboard updates
 - Vanilla HTML/JS/CSS frontend (no build step required)
 - Single NuGet dependency (`Yarp.ReverseProxy`)
@@ -350,13 +350,13 @@ speaker at conferences and user groups, Tore actively shares his knowledge and i
 
 ## Want to learn more about AI agents?
 
-Coding Agent Explorer was built as a teaching tool for [Tore Nestenius'](https://tn-data.se/) AI agent [workshops and presentations](https://tn-data.se/courses/), helping developers understand what happens under the hood when AI coding agents work.
+Coding Agent Explorer was built as a teaching tool for Tore Nestenius' talk [How Coding Agents Actually Work: Tools, MCP, and the Agent Loop](https://tn-data.se/talks/ai-development/), which he has given more than ten times. It helps developers see what happens under the hood when an AI coding agent works.
 
-Join one of Tore's workshops for programmers at [tn-data.se/courses](https://tn-data.se/courses/) to deepen your understanding of AI coding agents, .NET development, and cloud architecture.
+Would you like the talk at your conference, user group or company? [Get in touch](https://tn-data.se/contact/). If you prefer to read first, start with the blog post [Introducing the Coding Agent Explorer (.NET)](https://nestenius.se/ai/introducing-the-coding-agent-explorer-net/).
 
 ## What About Other Coding Agents?
 
-Coding Agent Explorer currently supports [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with the Anthropic API. Support for additional coding agents may be added in the future.
+Coding Agent Explorer currently supports [Claude Code](https://code.claude.com/docs) with the Anthropic API. Support for additional coding agents may be added in the future.
 
 ## License
 
