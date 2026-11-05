@@ -544,6 +544,26 @@ main {
     display: block;
 }
 
+.content-thinking .tool-header {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.content-thinking .tool-header:hover {
+    background: var(--border);
+}
+
+.content-stream-error {
+    margin-top: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--red);
+    border-radius: 4px;
+    color: var(--red);
+    font-size: 12px;
+    font-weight: 600;
+}
+
 .content-tool-result {
     margin-top: 6px;
     border: 1px solid var(--border);
@@ -739,7 +759,9 @@ main {
     border-color: var(--accent-border);
 }
 
-.hook-badge-stop {
+.hook-badge-stop,
+.hook-badge-stopfailure,
+.hook-badge-permissiondenied {
     background: var(--red-subtle);
     color: var(--red);
     border-color: var(--red-border);
@@ -747,7 +769,8 @@ main {
 
 .hook-badge-taskcompleted,
 .hook-badge-subagentstart,
-.hook-badge-subagentstopp {
+.hook-badge-taskcreated,
+.hook-badge-subagentstop {
     background: var(--green-subtle);
     color: var(--green);
     border-color: var(--green-border);

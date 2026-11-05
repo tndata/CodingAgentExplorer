@@ -584,10 +584,57 @@ function renderContentBlock(block) {
         return buildToolResultBlock(block);
     }
 
+    if (type === "thinking" || type === "redacted_thinking") {
+        return buildThinkingBlock(block);
+    }
+
+    if (type === "stream_error") {
+        return buildStreamErrorBlock(block);
+    }
+
     // Fallback: render as JSON
     const el = document.createElement("div");
     el.className = "content-text";
     el.textContent = JSON.stringify(block, null, 2);
+    return el;
+}
+
+function buildThinkingBlock(block) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "content-tool-use content-thinking";
+
+    const redacted = block.type === "redacted_thinking";
+    const text = block.thinking || "";
+    const header = document.createElement("div");
+    header.className = "tool-header";
+    const label = redacted ? "Thinking (redacted)" : "Thinking";
+    header.innerHTML = `<span class="arrow">&#9654;</span> ${label}`;
+
+    const body = document.createElement("div");
+    body.className = "tool-body";
+    if (text) {
+        body.textContent = text;
+    } else if (redacted) {
+        body.textContent = "(The reasoning was encrypted by the API and cannot be shown.)";
+    } else {
+        body.textContent = "(No thinking text in the response. The API can leave it out, for example when thinking display is set to omitted.)";
+    }
+
+    header.addEventListener("click", () => {
+        header.classList.toggle("expanded");
+        body.classList.toggle("open");
+    });
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(body);
+    return wrapper;
+}
+
+function buildStreamErrorBlock(block) {
+    const el = document.createElement("div");
+    el.className = "content-stream-error";
+    const err = block.error || {};
+    el.textContent = `Stream error: ${err.type || "unknown"}${err.message ? " - " + err.message : ""}`;
     return el;
 }
 
@@ -689,6 +736,10 @@ function parseStreamingResponse(sseEvents) {
         if (evtType === "content_block_stop") {
             handleBlockStop(contentBlocks, data);
         }
+        if (evtType === "error" && data.error) {
+            // An error can arrive on a stream that already returned HTTP 200
+            contentBlocks.push({ type: "stream_error", error: data.error });
+        }
     }
 
     finalizeContentBlocks(contentBlocks);
@@ -716,6 +767,12 @@ function handleBlockDelta(contentBlocks, data) {
     }
     if (data.delta.type === "input_json_delta" && data.delta.partial_json) {
         block._inputJson = (block._inputJson || "") + data.delta.partial_json;
+    }
+    if (data.delta.type === "thinking_delta" && data.delta.thinking) {
+        block.thinking = (block.thinking || "") + data.delta.thinking;
+    }
+    if (data.delta.type === "signature_delta" && data.delta.signature) {
+        block.signature = (block.signature || "") + data.delta.signature;
     }
 }
 
@@ -992,8 +1049,22 @@ function hookEventContext(evt) {
         case "sessionstart":        return input.source     ? { label: "source", value: input.source }             : null;
         case "sessionend":          return input.reason     ? { label: "reason", value: input.reason }             : null;
         case "subagentstart":
-        case "subagentstopp":       return input.agent_type ? { label: "agent",  value: input.agent_type }         : null;
+        case "subagentstop":       return input.agent_type ? { label: "agent",  value: input.agent_type }         : null;
         case "notification":        return input.notification_type ? { label: "type", value: input.notification_type } : null;
+        case "permissiondenied":    return input.tool_name  ? { label: "tool",   value: input.tool_name }         : null;
+        case "posttoolbatch":       return Array.isArray(input.tool_calls) ? { label: "tools", value: String(input.tool_calls.length) } : null;
+        case "setup":
+        case "postcompact":         return input.trigger    ? { label: "trigger", value: input.trigger }           : null;
+        case "userpromptexpansion": return input.command_name ? { label: "command", value: input.command_name }   : null;
+        case "taskcreated":         return input.task_subject ? { label: "task",  value: input.task_subject }      : null;
+        case "stopfailure":         return input.error      ? { label: "error",  value: input.error }             : null;
+        case "instructionsloaded":  return input.file_path  ? { label: "file",   value: input.file_path }         : null;
+        case "cwdchanged":          return input.new_cwd    ? { label: "to",     value: input.new_cwd }           : null;
+        case "directoryadded":      return input.directory  ? { label: "dir",    value: input.directory }         : null;
+        case "premodelswitch":
+        case "postmodelswitch":     return input.to_model   ? { label: "to",     value: input.to_model }          : null;
+        case "elicitation":
+        case "elicitationresult":   return input.mcp_server_name ? { label: "server", value: input.mcp_server_name } : null;
         default:                    return null;
     }
 }

@@ -28,7 +28,7 @@ echo   CodingAgentExplorer : %OUT%\CodingAgentExplorer\
 echo   HookAgent           : %OUT%\HookAgent\HookAgent.exe  (single file)
 echo.
 echo Both require .NET 10 runtime on the target machine.
-echo Add %OUT%\HookAgent to your PATH to use HookAgent as a Claude Code hook command.
+echo To use HookAgent as a Claude Code hook, copy the HookAgent folder to where you run claude. See the README.
 goto :eof
 
 :fail

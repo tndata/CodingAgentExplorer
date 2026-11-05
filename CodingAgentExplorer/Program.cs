@@ -61,7 +61,7 @@ app.MapPost("/api/hook-event", async (
 
     hookEvent.Timestamp = DateTime.UtcNow;     // server clock for timeline accuracy
     hookEvent.ExitCode = 0;
-    hookEvent.Stdout = $"Hook '{hookEvent.HookEventName}' captured";
+    hookEvent.Stdout = "";                     // empty: stdout from some hooks is added to Claude's context, and an observer must not change what it observes
     hookEvent.Stderr = "";
 
     hookStore.Add(hookEvent);

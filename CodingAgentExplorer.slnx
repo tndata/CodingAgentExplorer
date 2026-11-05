@@ -4,4 +4,5 @@
   </Folder>
   <Project Path="CodingAgentExplorer/CodingAgentExplorer.csproj" />
   <Project Path="HookAgent/HookAgent.csproj" />
+  <Project Path="CodingAgentExplorer.Tests/CodingAgentExplorer.Tests.csproj" />
 </Solution>

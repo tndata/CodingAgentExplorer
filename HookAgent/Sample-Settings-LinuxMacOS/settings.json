@@ -1,15 +1,19 @@
 {
   "_readme": [
-    "Sample .claude/settings.json for macOS and Linux — captures every Claude Code hook event and forwards it to",
-    "the CodingAgentExplorer dashboard (http://localhost:5000).",
+    "Sample .claude/settings.json for macOS and Linux: registers HookAgent for 30 of the 33 Claude Code hook events (as of Claude Code 2.1.318)",
+    "and forwards them to the CodingAgentExplorer dashboard (http://localhost:5000).",
     "",
     "Setup:",
     "  1. Copy the Published/HookAgent/ folder into your working directory (e.g. ~/MyProject/HookAgent/).",
     "  2. Copy this file to .claude/settings.json inside that same working directory.",
     "  3. Start CodingAgentExplorer (dotnet run), then run 'claude' from your working directory.",
     "",
-    "The command path is relative — it resolves from wherever you run 'claude'.",
-    "If the dashboard is not running, HookAgent exits silently with code 0."
+    "The command path is relative: it resolves from wherever you run 'claude'.",
+    "If the dashboard is not running, HookAgent exits silently with code 0.",
+    "",
+    "Left out on purpose: WorktreeCreate and WorktreeRemove (the hook replaces git's worktree handling, so HookAgent would break it)",
+    "and FileChanged (needs literal file names as matchers). Remove an entry below if your Claude Code version does not know the event.",
+    "MessageDisplay fires while text streams, so it runs with async: true. Add async: true to any entry if you only observe and do not care about exact ordering."
   ],
 
   "hooks": {
@@ -110,6 +114,96 @@
     ],
 
     "TaskCompleted": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "Setup": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "UserPromptExpansion": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PermissionDenied": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PostToolBatch": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "MessageDisplay": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": true }]
+      }
+    ],
+
+    "TaskCreated": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "StopFailure": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "InstructionsLoaded": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "CwdChanged": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "DirectoryAdded": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PostCompact": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PreModelSwitch": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "PostModelSwitch": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "Elicitation": [
+      {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "ElicitationResult": [
       {
         "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
       }

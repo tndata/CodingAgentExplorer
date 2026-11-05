@@ -604,7 +604,16 @@
     function getResponseJson(r) {
         if (r.responseBody) { try { return JSON.parse(r.responseBody); } catch {} }
         if (r.sseEvents?.length) {
-            for (const e of r.sseEvents) { try { return JSON.parse(e.data); } catch {} }
+            // The stream can carry notifications (for example progress) before the response,
+            // so prefer the message that has a result or an error.
+            let first = null;
+            for (const e of r.sseEvents) {
+                let msg;
+                try { msg = JSON.parse(e.data); } catch { continue; }
+                if (msg && (msg.result !== undefined || msg.error !== undefined)) return msg;
+                first ??= msg;
+            }
+            return first;
         }
         return null;
     }

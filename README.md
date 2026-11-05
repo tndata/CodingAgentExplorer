@@ -102,12 +102,16 @@ Run `DisableProxy.bat` to clear it.
 ```powershell
 # Enable
 $env:ANTHROPIC_BASE_URL = "http://localhost:8888"
+$env:CLAUDE_CODE_GATEWAY_HINT_HEADERS = "1"
 
 # Disable
 Remove-Item Env:ANTHROPIC_BASE_URL
+Remove-Item Env:CLAUDE_CODE_GATEWAY_HINT_HEADERS
 ```
 
-All scripts only affect the current terminal session. The variable is not persisted, so closing the terminal automatically clears it.
+The scripts also set `CLAUDE_CODE_GATEWAY_HINT_HEADERS=1`. Claude Code sends extra `x-claude-code-*` request headers (request class: main, subagent or auxiliary; agent type; prompt id; tool durations) when it talks to `api.anthropic.com` directly, but not through a custom `ANTHROPIC_BASE_URL` unless this variable is set. With it, the proxy sees the same headers as a direct session.
+
+All scripts only affect the current terminal session. The variables are not persisted, so closing the terminal automatically clears them.
 
 Then use Claude Code as you normally would.
 
@@ -193,7 +197,23 @@ bash publish.sh
 | `Published/CodingAgentExplorer/` | Proxy + dashboard (exe, wwwroot, appsettings.json) |
 | `Published/HookAgent/HookAgent` | HookAgent (current platform, single-file) |
 
-All outputs require the .NET 10 runtime on the target machine. Add `Published/HookAgent` to your `PATH` to use `HookAgent` as a Claude Code hook command.
+All outputs require the .NET 10 runtime on the target machine. To use HookAgent as a Claude Code hook command, see [HookAgent](#hookagent).
+
+## Demo folder (Windows)
+
+`SetupDemoFolder.bat` builds a ready-to-use demo folder in one step, so a demo or a talk starts from the same clean state every time. It:
+
+1. runs `publish.bat`,
+2. creates `C:\Conf` (it must be missing or empty, nothing is ever deleted),
+3. copies in `EnableProxy.bat`, `HookAgent\HookAgent.exe` and `.pdb`, the Windows sample `.claude\settings.json`, and the sample skill from `DemoFolder\skills\Sweden\`.
+
+```bat
+SetupDemoFolder.bat
+```
+
+The folder is always `C:\Conf`. If it already exists and is not empty, the script stops and asks you to clear it first, so to run it again, empty or delete `C:\Conf` yourself.
+
+Then open a command prompt in the demo folder, run `EnableProxy.bat` and start `claude`.
 
 ## HookAgent
 
@@ -217,7 +237,10 @@ Claude Code invokes hook commands by writing a JSON payload to **stdin** and rea
 
 **Step 1:** Run `publish.bat` to build both projects.
 
-**Step 2:** Copy `Published\HookAgent\` into the working directory where students will run `claude`. You can also add it to your `PATH` so the command is available globally.
+**Step 2:** Put `HookAgent.exe` where Claude Code can run it. Pick one:
+
+- **In the project (simplest):** copy `Published\HookAgent\` into the working directory where you run `claude`, as shown below. The sample settings already point to `HookAgent/HookAgent.exe`.
+- **One fixed location:** copy `Published\HookAgent\` once to a folder such as `C:\Tools\HookAgent\`, and change every `command` in `.claude\settings.json` to the full path, for example `C:/Tools/HookAgent/HookAgent.exe`. You then need no copy per project.
 
 ```
 C:\MyProject\
@@ -227,17 +250,20 @@ C:\MyProject\
     settings.json
 ```
 
-**Step 3:** Copy `HookAgent\Sample-Settings-Windows\settings.json` from the repo to `.claude\settings.json` in the working directory. This registers HookAgent for all 15 Claude Code hook events.
+**Step 3:** Copy `HookAgent\Sample-Settings-Windows\settings.json` from the repo to `.claude\settings.json` in the working directory. This registers HookAgent for 30 of the 33 Claude Code hook events (see [Hook events captured](#hook-events-captured)).
 
 **Step 4:** Start CodingAgentExplorer, then run `claude` from the working directory. Hook events appear in the Conversation View alongside API requests.
 
-> **Note:** Claude Code runs hook commands through bash on Windows too. Always use forward slashes in the command path: `HookAgent/HookAgent.exe`.
+> **Note:** On Windows, Claude Code runs hook commands with Git Bash, or with PowerShell when Git Bash is not installed. Forward slashes in the command path work in both: `HookAgent/HookAgent.exe`.
 
 ### Setup on macOS / Linux
 
 **Step 1:** Run `bash publish.sh` to build both projects for your platform.
 
-**Step 2:** Copy `Published/HookAgent/` into the working directory where students will run `claude`. You can also add it to your `PATH` so the command is available globally.
+**Step 2:** Put `HookAgent` where Claude Code can run it. Pick one:
+
+- **In the project (simplest):** copy `Published/HookAgent/` into the working directory where you run `claude`, as shown below. The sample settings already point to `HookAgent/HookAgent`.
+- **One fixed location:** copy `Published/HookAgent/` once to a folder such as `/opt/hookagent/`, and change every `command` in `.claude/settings.json` to the full path, for example `/opt/hookagent/HookAgent`. You then need no copy per project.
 
 ```
 ~/MyProject/
@@ -247,10 +273,20 @@ C:\MyProject\
     settings.json
 ```
 
-**Step 3:** Copy `HookAgent/Sample-Settings-LinuxMacOS/settings.json` from the repo to `.claude/settings.json` in the working directory. This registers HookAgent for all 15 Claude Code hook events.
+**Step 3:** Copy `HookAgent/Sample-Settings-LinuxMacOS/settings.json` from the repo to `.claude/settings.json` in the working directory. This registers HookAgent for 30 of the 33 Claude Code hook events (see [Hook events captured](#hook-events-captured)).
 
 **Step 4:** Start CodingAgentExplorer, then run `claude` from the working directory. Hook events appear in the Conversation View alongside API requests.
 
+### Assumptions in the sample settings
+
+The sample `settings.json` files assume the following. Change the file if your setup differs.
+
+- **The command path is relative.** `HookAgent/HookAgent.exe` (`HookAgent/HookAgent` on macOS and Linux) is resolved from the folder where you start `claude`. Start it from another folder, or put HookAgent somewhere else, and the hooks silently do nothing until you use a full path.
+- **The dashboard runs at `http://localhost:5000`.** That address is built into HookAgent. If the dashboard is not running, HookAgent exits silently with code 0 and Claude Code carries on.
+- **Hooks run synchronously** (`"async": false`), so Claude Code waits for HookAgent on each event. Only `MessageDisplay` is async, because it fires while text streams. Add `"async": true` to any entry if you only observe and do not need exact ordering.
+- **Tool events match every tool** (`"matcher": ".*"`). Narrow the matcher to watch only some tools.
+- **30 of the 33 hook events are registered**, as of Claude Code 2.1.318. `WorktreeCreate` and `WorktreeRemove` are left out because a hook for them replaces git's own worktree handling, and `FileChanged` is left out because it needs literal file names as matchers. If your Claude Code version does not know an event, remove its entry.
+- **On Windows, Claude Code runs hook commands with Git Bash,** or with PowerShell when Git Bash is not installed. Forward slashes in the command path work in both.
 ### Verify it works
 
 Test HookAgent manually before starting a Claude Code session:
@@ -271,19 +307,27 @@ Hook events appear inline in the Conversation View, interleaved with API request
 
 | Event | When it fires |
 |---|---|
-| `SessionStart` | Claude Code session begins or resumes |
+| `SessionStart` / `SessionEnd` | Claude Code session begins or resumes / terminates |
+| `Setup` | `--init-only`, or `--init` / `--maintenance` with `-p` |
 | `UserPromptSubmit` | User submits a prompt |
+| `UserPromptExpansion` | A typed command expands into a prompt |
 | `PreToolUse` | Before any tool call executes |
-| `PostToolUse` | After a tool call succeeds |
-| `PostToolUseFailure` | After a tool call fails |
-| `PermissionRequest` | When Claude Code asks for permission |
-| `Stop` | Claude finishes responding |
+| `PermissionRequest` / `PermissionDenied` | Claude Code asks for permission / auto mode denies a tool call |
+| `PostToolUse` / `PostToolUseFailure` | After a tool call succeeds / fails |
+| `PostToolBatch` | After a batch of parallel tool calls, before the next model call |
+| `MessageDisplay` | While assistant text is displayed (runs with `async: true`) |
+| `Stop` / `StopFailure` | Claude finishes responding / the turn ends on an API error |
 | `SubagentStart` / `SubagentStop` | A subagent is spawned or finishes |
+| `TaskCreated` / `TaskCompleted` / `TeammateIdle` | Task and agent team events |
 | `Notification` | Claude Code sends a notification |
-| `PreCompact` | Before context compaction |
+| `PreCompact` / `PostCompact` | Before / after context compaction |
+| `PreModelSwitch` / `PostModelSwitch` | Before / after the model changes |
+| `InstructionsLoaded` | A `CLAUDE.md` file or rule is loaded into context |
 | `ConfigChange` | A settings file changes during the session |
-| `TeammateIdle` / `TaskCompleted` | Agent team events |
-| `SessionEnd` | Session terminates |
+| `CwdChanged` / `DirectoryAdded` | The working directory changes / `/add-dir` adds a directory |
+| `Elicitation` / `ElicitationResult` | An MCP server asks for user input / the user answered |
+
+Three events are left out on purpose. `WorktreeCreate` and `WorktreeRemove` replace git's own worktree handling, so a hook that only observes would break worktree creation. `FileChanged` needs literal file names as matchers, so one catch-all entry makes no sense. The list matches Claude Code 2.1.318; if your version does not know an event, remove its entry from `settings.json`. All hooks run synchronously (`async: false`) so the order in the timeline is exact, except `MessageDisplay`, which fires while text streams and runs in the background. For pure observation you can set `async: true` on any entry.
 
 ## Architecture
 
@@ -305,6 +349,8 @@ Hook events appear inline in the Conversation View, interleaved with API request
 ```
 ├── publish.bat                         # Publishes both projects to Published/ (Windows, win-x64)
 ├── publish.sh                          # Publishes both projects to Published/ (all platforms)
+├── SetupDemoFolder.bat                 # Creates a clean demo folder, C:\Conf (Windows)
+├── DemoFolder/                         # Sample skill copied into the demo folder
 ├── CodingAgentExplorer/
 │   ├── Program.cs                      # App setup: YARP, SignalR, dual-port Kestrel
 │   ├── Models/                         # DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent, HookEvent

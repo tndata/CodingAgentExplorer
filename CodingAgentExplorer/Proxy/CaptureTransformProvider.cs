@@ -79,7 +79,7 @@ public class CaptureTransformProvider : ITransformProvider
         httpContext.Items["Stopwatch"] = Stopwatch.StartNew();
     }
 
-    private static void CopyHeadersWithRedaction(
+    internal static void CopyHeadersWithRedaction(
         IHeaderDictionary source, Dictionary<string, string> target)
     {
         foreach (var header in source)
@@ -178,9 +178,11 @@ public class CaptureTransformProvider : ITransformProvider
         clientResponse.Headers.CacheControl = "no-cache";
         clientResponse.Headers.Connection = "keep-alive";
 
-        // Log any unexpected Content-Encoding (should be empty after stripping Accept-Encoding)
+        // Log any unexpected Content-Encoding (should be empty after stripping Accept-Encoding).
+        // "identity" means no encoding, and some servers (Microsoft Learn MCP) send it explicitly.
         var contentEncoding = proxyResponse.Content.Headers.ContentEncoding.FirstOrDefault();
-        if (!string.IsNullOrEmpty(contentEncoding))
+        if (!string.IsNullOrEmpty(contentEncoding)
+            && !contentEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
         {
             logger.LogWarning(
                 "SSE response has Content-Encoding: {Encoding} — forwarding may be corrupted. " +
@@ -263,7 +265,7 @@ public class CaptureTransformProvider : ITransformProvider
             ParseNonStreamingResponse(proxiedRequest, body);
     }
 
-    private static void ParseSseEventData(ProxiedRequest request, string? eventType,
+    internal static void ParseSseEventData(ProxiedRequest request, string? eventType,
         string data, Stopwatch stopwatch, ref bool firstTokenSeen)
     {
         if (data == "[DONE]") return;
@@ -289,6 +291,10 @@ public class CaptureTransformProvider : ITransformProvider
 
                 case "message_delta":
                     ParseMessageDelta(request, root);
+                    break;
+
+                case "error":
+                    ParseStreamError(request, root);
                     break;
             }
         }
@@ -325,11 +331,30 @@ public class CaptureTransformProvider : ITransformProvider
             request.StopReason = stopReason.GetString();
         }
 
-        if (root.TryGetProperty("usage", out var deltaUsage)
-            && deltaUsage.TryGetProperty("output_tokens", out var outputTokens))
-        {
+        // The usage in message_delta is cumulative, and the last one wins. Input and cache
+        // numbers can change after message_start (for example with server tools such as web search).
+        if (!root.TryGetProperty("usage", out var deltaUsage))
+            return;
+
+        if (deltaUsage.TryGetProperty("output_tokens", out var outputTokens) && outputTokens.ValueKind == JsonValueKind.Number)
             request.OutputTokens = outputTokens.GetInt32();
-        }
+        if (deltaUsage.TryGetProperty("input_tokens", out var inputTokens) && inputTokens.ValueKind == JsonValueKind.Number)
+            request.InputTokens = inputTokens.GetInt32();
+        if (deltaUsage.TryGetProperty("cache_creation_input_tokens", out var cacheCreate) && cacheCreate.ValueKind == JsonValueKind.Number)
+            request.CacheCreationInputTokens = cacheCreate.GetInt32();
+        if (deltaUsage.TryGetProperty("cache_read_input_tokens", out var cacheRead) && cacheRead.ValueKind == JsonValueKind.Number)
+            request.CacheReadInputTokens = cacheRead.GetInt32();
+    }
+
+    private static void ParseStreamError(ProxiedRequest request, JsonElement root)
+    {
+        // An error event can arrive on a stream that already returned HTTP 200.
+        if (!root.TryGetProperty("error", out var error))
+            return;
+
+        var type = error.TryGetProperty("type", out var t) ? t.GetString() : null;
+        var message = error.TryGetProperty("message", out var m) ? m.GetString() : null;
+        request.Error = $"Stream error event: {type ?? "unknown"}{(message is null ? "" : $": {message}")}";
     }
 
     private static async Task<string> ReadResponseBodyAsync(HttpResponseMessage response)
@@ -349,7 +374,7 @@ public class CaptureTransformProvider : ITransformProvider
         return await reader.ReadToEndAsync();
     }
 
-    private static void ParseNonStreamingResponse(ProxiedRequest request, string body)
+    internal static void ParseNonStreamingResponse(ProxiedRequest request, string body)
     {
         try
         {

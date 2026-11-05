@@ -8,14 +8,19 @@ ASP.NET Core reverse proxy using YARP that sits between AI coding agents (such a
 - **Port 9999** (`localhost`): YARP reverse proxy forwarding to MCP server (HTTP), destination configured at runtime
 - **Port 5000** (`localhost`): Dashboard (HTTP)
 - **Port 5001** (`localhost`): Dashboard (HTTPS, auto-launches browser)
-- Single project, single NuGet dependency (`Yarp.ReverseProxy`)
+- Single NuGet dependency in the app (`Yarp.ReverseProxy`); unit tests in `CodingAgentExplorer.Tests` (xUnit)
 
 ## Build & Run
 
 ```bash
 dotnet build
-dotnet run
+dotnet run --project CodingAgentExplorer
+dotnet test
 ```
+
+## Smoke test
+
+With the app running, `node scripts/smoke.mjs` sends a fixed set of requests (no API key, no model tokens) and checks what was captured. `node scripts/capture-summary.mjs` prints a compact summary of the captured traffic (`--json`, `--clear`). Add `--claude` to the smoke test for one tiny `claude -p` call through the proxy. Needs Node 22 or later.
 
 ## Publish
 
@@ -72,10 +77,9 @@ The destination URL is stored in `McpProxyConfig` (singleton) and triggers a YAR
 - `publish.bat` - Publishes both projects to `Published/` (Windows, win-x64 HookAgent)
 - `publish.sh` - Publishes both projects to `Published/` (detects current platform for HookAgent)
 
-## Blog Posts
+## Published Descriptions
 
-- [Introducing the Coding Agent Explorer .NET](https://nestenius.se/ai/introducing-the-coding-agent-explorer-net/) - Overview of the project, architecture, and design decisions
-- [Exploring Claude Code Hooks with the Coding Agent Explorer (.NET)](https://nestenius.se/ai/exploring-claude-code-hooks-with-the-coding-agent-explorer-net/) - Deep dive into the HookAgent and Claude Code hook system integration
+Published blog posts and a conference talk describe this tool's ports, views, hook setup and MCP Observer (links in `README.md`). When you change any of that, say so, so the posts can be updated. Never rename ports, endpoints or hook setup without asking.
 
 ## Writing Style
 

@@ -13,4 +13,8 @@
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="CodingAgentExplorer.Tests" />
+  </ItemGroup>
+
 </Project>

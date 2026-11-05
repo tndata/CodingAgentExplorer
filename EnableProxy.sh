@@ -1,1 +1,2 @@
 export ANTHROPIC_BASE_URL=http://localhost:8888
+export CLAUDE_CODE_GATEWAY_HINT_HEADERS=1
