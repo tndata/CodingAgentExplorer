@@ -8,6 +8,11 @@ on:
 jobs:
   build:
     name: Build and analyze
+    # SONAR_TOKEN is not available to pull requests from forks or Dependabot, so the analysis only runs
+    # on pushes and on pull requests from branches in this repository. Build and test runs for all of them.
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
     runs-on: windows-latest
     permissions:
       contents: read

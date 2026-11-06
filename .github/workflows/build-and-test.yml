@@ -1,0 +1,33 @@
+name: Build and test
+
+# Builds the solution and runs the tests on every push and pull request.
+# Needs no secrets, so it also runs for pull requests from forks and from Dependabot.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore CodingAgentExplorer.slnx
+
+      - name: Build
+        run: dotnet build CodingAgentExplorer.slnx --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test CodingAgentExplorer.slnx --no-build --configuration Release --verbosity normal

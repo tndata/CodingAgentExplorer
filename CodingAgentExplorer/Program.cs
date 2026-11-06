@@ -49,6 +49,14 @@ var apiUpstream = app.Services.GetRequiredService<ApiUpstreamConfig>();
 app.Logger.LogInformation("API upstream (port 8888): {Url} (from {Source})",
     apiUpstream.ActiveUrl, apiUpstream.StartupSource);
 
+// The port in the Host header must be the port the request arrived on (see ListeningPortGuard),
+// so the RequireHost port checks below and the YARP host matches really bind to the listening port.
+app.Use(ListeningPortGuard.Middleware);
+
+// Dashboard ports (pages, hub, hook endpoint): loopback Host only, and a browser Origin must be the dashboard.
+// Blocks other web pages (cross-site WebSocket to the hub) and DNS rebinding. HookAgent and scripts send no Origin.
+app.Use(DashboardRequestGuard.Middleware);
+
 // Serve static files only on dashboard ports
 app.UseWhen(
     ctx => ctx.Connection.LocalPort is 5000 or 5001,
@@ -79,7 +87,7 @@ app.MapPost("/api/hook-event", async (
         stderr   = hookEvent.Stderr
     });
 })
-.RequireHost(DashboardPort5000, DashboardPort5001);   // NOT on :8888 (YARP proxy port)
+.RequireHost(DashboardPort5000, DashboardPort5001);   // dashboard ports only, not the proxy ports (ListeningPortGuard)
 
 // Settings endpoints. They decide where the proxies send traffic (and with it the API key or MCP tokens),
 // so DashboardRequestGuard only lets the dashboard itself change them.

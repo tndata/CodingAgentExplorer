@@ -28,6 +28,25 @@ internal static class DashboardRequestGuard
             && o.Port is 5000 or 5001;
     }
 
+    internal static bool IsDashboardPort(int localPort) => localPort is 5000 or 5001;
+
+    /// <summary>
+    /// Applies the same check to every request on the dashboard ports: the pages, the hook endpoint and above all
+    /// the SignalR hub, which sends all captured traffic to whoever connects. WebSockets are not covered by CORS,
+    /// so without this any web page could open ws://localhost:5000/hub and read it.
+    /// </summary>
+    public static async Task Middleware(HttpContext context, RequestDelegate next)
+    {
+        if (IsDashboardPort(context.Connection.LocalPort)
+            && !IsAllowed(context.Request.Host.Host, context.Request.Headers.Origin.ToString()))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
+
+        await next(context);
+    }
+
     public static async ValueTask<object?> Filter(
         EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
