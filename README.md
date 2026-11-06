@@ -119,11 +119,32 @@ Then use Claude Code as you normally would.
 
 Navigate to [https://localhost:5001](https://localhost:5001) in your browser. On Windows the browser opens automatically on `dotnet run`. On macOS and Linux, open it manually.
 
-You will see three views:
+You will see three views and a settings page:
 
 - **HTTP Inspector** - Table view of all proxied requests with headers, bodies, SSE events, and timing details
 - **Conversation View** - Chat-style display showing messages, tool use, and responses
 - **MCP Observer** - Dedicated view for inspecting MCP server traffic (see below)
+- **Settings** - Where the proxy on port 8888 sends requests (see below)
+
+## Changing the API upstream (optional)
+
+By default the proxy on port 8888 forwards to `https://api.anthropic.com`. You can point it at any other server that speaks the Anthropic Messages API, for example a local model in [LM Studio](https://lmstudio.ai/), which has an Anthropic-compatible endpoint. The proxy forwards requests as they are and translates nothing, so an OpenAI-only server will not work.
+
+The upstream is chosen in this order:
+
+1. **The Settings page** in the dashboard, for the current run only. **Reset** goes back to the startup value.
+2. **The environment variable** `CODING_AGENT_EXPLORER_UPSTREAM_URL`, set before you start the app:
+   ```powershell
+   $env:CODING_AGENT_EXPLORER_UPSTREAM_URL = "http://localhost:1234"
+   ```
+3. **`appsettings.json`**, the `ApiUpstream:Url` setting.
+4. **The default**, `https://api.anthropic.com`.
+
+The console shows the upstream in use at startup, and the Settings page shows it at any time. An invalid URL in the variable or in `appsettings.json` stops the app at startup with an error, instead of silently falling back to Anthropic. A path in the URL is kept (`https://gateway.example.com/anthropic` sends `/v1/messages` to `/anthropic/v1/messages`).
+
+The proxy passes on whatever credentials Claude Code sends, so the upstream receives your API key or login token. Only point it at servers you trust.
+
+When Claude Code talks to a local model, start it with that model's name, for example `claude --model qwen3-coder-30b-a3b-instruct-mlx`. The configurable upstream was contributed by [Marek Kacprzak](https://github.com/marekkacprzak).
 
 ## MCP Observer
 
@@ -358,6 +379,8 @@ Three events are left out on purpose. `WorktreeCreate` and `WorktreeRemove` repl
 │   ├── Services/HookEventStore.cs      # In-memory store for hook events
 │   ├── Services/McpRequestStore.cs     # In-memory store for MCP requests
 │   ├── Services/McpProxyConfig.cs      # Holds the configured MCP destination URL
+│   ├── Services/ApiUpstreamConfig.cs   # Where port 8888 forwards to (startup value and Settings override)
+│   ├── Services/DashboardRequestGuard.cs  # Only the dashboard may change the settings endpoints
 │   ├── Proxy/CaptureTransformProvider.cs  # YARP ITransformProvider for request/response capture
 │   ├── Proxy/DynamicProxyConfigProvider.cs # Dynamic YARP config for Claude (8888) and MCP (9999) routes
 │   ├── Hubs/DashboardHub.cs            # SignalR hub for real-time dashboard updates
@@ -366,6 +389,7 @@ Three events are left out on purpose. `WorktreeCreate` and `WorktreeRemove` repl
 │       ├── inspector/                  # HTTP Inspector view
 │       ├── conversation/               # Conversation view
 │       ├── mcp/                        # MCP Observer view
+│       ├── settings/                   # Settings page (API upstream)
 │       ├── css/                        # Stylesheets
 │       └── js/                         # Dashboard and conversation scripts
 └── HookAgent/                          # Single-file CLI tool for Claude Code hooks
@@ -376,6 +400,7 @@ Three events are left out on purpose. `WorktreeCreate` and `WorktreeRemove` repl
 
 - API keys (`x-api-key` and `Authorization` headers) are automatically redacted from stored request data
 - The proxy only listens on `localhost` - it is not exposed to the network
+- The settings endpoints (API upstream and MCP destination) decide where your credentials go, so they only accept requests with a `localhost` Host header and, from a browser, only from the dashboard itself. This blocks other web pages, including DNS rebinding tricks, from changing them
 - Request data is stored in memory only (max 1000 requests, no persistence)
 
 ## About the author

@@ -7,9 +7,7 @@ namespace CodingAgentExplorer.Proxy;
 
 public class DynamicProxyConfigProvider(
     McpProxyConfig mcpConfig,
-    AnthropicProxyConfig anthropicConfig,
-    IConfiguration configuration,
-    ILogger<DynamicProxyConfigProvider> logger) : IProxyConfigProvider
+    ApiUpstreamConfig apiUpstream) : IProxyConfigProvider
 {
     private static readonly ForwarderRequestConfig LongTimeout = new()
     {
@@ -19,7 +17,9 @@ public class DynamicProxyConfigProvider(
 
     public IProxyConfig GetConfig()
     {
-        var anthropicDestination = ResolveAnthropicDestination(anthropicConfig, configuration, logger);
+        // API upstream (port 8888), e.g. "https://api.anthropic.com" or "http://localhost:1234".
+        // A path in the URL (a gateway under "/anthropic") is prepended to every request path.
+        var (apiHost, apiPathPrefix) = ApiUpstreamConfig.Split(apiUpstream.ActiveUrl);
 
         var routes = new List<RouteConfig>
         {
@@ -31,7 +31,10 @@ public class DynamicProxyConfigProvider(
                 {
                     Hosts = ["localhost:8888", "127.0.0.1:8888"],
                     Path = "{**catch-all}"
-                }
+                },
+                Transforms = string.IsNullOrEmpty(apiPathPrefix)
+                    ? null
+                    : [new Dictionary<string, string> { ["PathPrefix"] = apiPathPrefix }]
             }
         };
 
@@ -42,7 +45,7 @@ public class DynamicProxyConfigProvider(
                 ClusterId = "anthropic-cluster",
                 Destinations = new Dictionary<string, DestinationConfig>
                 {
-                    ["dest"] = new() { Address = anthropicDestination }
+                    ["dest"] = new() { Address = apiHost }
                 },
                 HttpRequest = LongTimeout
             }
@@ -79,53 +82,14 @@ public class DynamicProxyConfigProvider(
             });
         }
 
-        // Combine both change tokens so YARP reloads when either MCP or Anthropic config changes
-        var combinedChangeToken = new CompositeChangeToken(new[]
-        {
+        // Reload when either the MCP destination or the API upstream changes
+        var combinedChangeToken = new CompositeChangeToken(
+        [
             mcpConfig.GetChangeToken(),
-            anthropicConfig.GetChangeToken()
-        });
+            apiUpstream.GetChangeToken()
+        ]);
 
         return new InMemoryProxyConfig(routes, clusters, combinedChangeToken);
-    }
-
-    private static string ResolveAnthropicDestination(
-        AnthropicProxyConfig anthropicConfig,
-        IConfiguration configuration,
-        ILogger logger)
-    {
-        // Priority order:
-        // 1. Runtime config from AnthropicProxyConfig (set via web page)
-        // 2. Environment variable
-        // 3. appsettings.json
-        // 4. Default fallback
-
-        var configured = anthropicConfig.DestinationUrl;
-
-        if (string.IsNullOrWhiteSpace(configured))
-        {
-            configured = Environment.GetEnvironmentVariable("CODING_AGENT_EXPLORER_UPSTREAM_URL");
-        }
-
-        if (string.IsNullOrWhiteSpace(configured))
-        {
-            configured = configuration
-                .GetSection("ReverseProxy:Clusters:anthropic-cluster:Destinations")
-                .GetChildren()
-                .Select(d => d["Address"])
-                .FirstOrDefault(a => !string.IsNullOrWhiteSpace(a));
-        }
-
-        if (!string.IsNullOrWhiteSpace(configured)
-            && Uri.TryCreate(configured, UriKind.Absolute, out var uri)
-            && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
-        {
-            return uri.GetLeftPart(UriPartial.Authority);
-        }
-
-        logger.LogWarning(
-            "No valid upstream destination configured. Falling back to https://api.anthropic.com");
-        return "https://api.anthropic.com";
     }
 }
 

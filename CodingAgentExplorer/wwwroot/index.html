@@ -30,7 +30,11 @@
         }
         .cards {
             display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 24px;
+            max-width: 100%;
+            padding: 0 16px;
         }
         .card {
             display: block;
@@ -65,7 +69,7 @@
         .card-inspector .card-icon { color: var(--accent); }
         .card-conversation .card-icon { color: var(--purple); }
         .card-mcp .card-icon { color: var(--green); }
-        .card-anthropic .card-icon { color: var(--orange); }
+        .card-settings .card-icon { color: var(--orange); }
         footer {
             position: fixed;
             bottom: 0;
@@ -106,10 +110,10 @@
             <h2>MCP Observer</h2>
             <p>Inspect all traffic between Claude Code and HTTP-based MCP servers.</p>
         </a>
-        <a href="/anthropic/index.html" class="card card-anthropic">
-            <span class="card-icon">&#x1F916;</span>
-            <h2>Anthropic Config</h2>
-            <p>Configure the upstream Anthropic API destination for the proxy on port 8888.</p>
+        <a href="/settings/index.html" class="card card-settings">
+            <span class="card-icon">&#x2699;&#xFE0F;</span>
+            <h2>Settings</h2>
+            <p>Choose where the proxy on port 8888 sends requests: api.anthropic.com or another Anthropic-compatible server.</p>
         </a>
     </div>
     <footer>

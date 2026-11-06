@@ -63,16 +63,19 @@ The destination URL is stored in `McpProxyConfig` (singleton) and triggers a YAR
 ## Project Structure
 
 - `Program.cs` - App setup: YARP, SignalR, dual-port Kestrel, API endpoints
-- `Models/` - DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent, HookEvent, McpDestinationRequest
+- `Models/` - DTOs: ProxiedRequest, ClaudeRequestBody, SseEvent, HookEvent, McpDestinationRequest, ApiUpstreamRequest
 - `Services/RequestStore.cs` - In-memory circular buffer (ConcurrentQueue, max 1000)
 - `Services/HookEventStore.cs` - In-memory store for hook events
 - `Services/McpRequestStore.cs` - In-memory store for MCP requests (max 500)
 - `Services/McpProxyConfig.cs` - Holds the runtime MCP destination URL, signals YARP on change
+- `Services/ApiUpstreamConfig.cs` - Where port 8888 forwards to: startup value (env `CODING_AGENT_EXPLORER_UPSTREAM_URL`, then `ApiUpstream:Url` in appsettings.json, then api.anthropic.com) plus a runtime override from the Settings page; validates URLs, keeps a path prefix, signals YARP on change
+- `Services/DashboardRequestGuard.cs` - Endpoint filter for the settings endpoints: loopback Host header, and Origin (if sent) must be the dashboard on 5000/5001
 - `Proxy/CaptureTransformProvider.cs` - YARP ITransformProvider for request/response capture
 - `Proxy/DynamicProxyConfigProvider.cs` - Dynamic YARP config for Claude (8888) and MCP (9999) routes
 - `Hubs/DashboardHub.cs` - SignalR hub for real-time dashboard updates
 - `wwwroot/` - Dashboard SPA (vanilla HTML/JS/CSS + SignalR client)
 - `wwwroot/mcp/` - MCP Observer page
+- `wwwroot/settings/` - Settings page (API upstream, `GET`/`POST /api/settings/api-upstream`)
 - `HookAgent/` - Single-file CLI tool used as a Claude Code hook command
 - `publish.bat` - Publishes both projects to `Published/` (Windows, win-x64 HookAgent)
 - `publish.sh` - Publishes both projects to `Published/` (detects current platform for HookAgent)
