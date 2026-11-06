@@ -1,6 +1,6 @@
 {
   "_readme": [
-    "Sample .claude/settings.json for macOS and Linux: registers HookAgent for 30 of the 33 Claude Code hook events (as of Claude Code 2.1.318)",
+    "Sample .claude/settings.json for macOS and Linux: registers HookAgent for 31 of the 33 Claude Code hook events (as of Claude Code 2.1.318)",
     "and forwards them to the CodingAgentExplorer dashboard (http://localhost:5000).",
     "",
     "Setup:",
@@ -11,8 +11,8 @@
     "The command path is relative: it resolves from wherever you run 'claude'.",
     "If the dashboard is not running, HookAgent exits silently with code 0.",
     "",
-    "Left out on purpose: WorktreeCreate and WorktreeRemove (the hook replaces git's worktree handling, so HookAgent would break it)",
-    "and FileChanged (needs literal file names as matchers). Remove an entry below if your Claude Code version does not know the event.",
+    "Left out on purpose: WorktreeCreate and WorktreeRemove (the hook replaces git's worktree handling, so HookAgent would break it).",
+    "FileChanged watches only the literal file names in its matcher (here .env and .envrc); change them to the files you care about. Remove an entry below if your Claude Code version does not know the event.",
     "MessageDisplay fires while text streams, so it runs with async: true. Add async: true to any entry if you only observe and do not care about exact ordering."
   ],
 
@@ -205,6 +205,13 @@
 
     "ElicitationResult": [
       {
+        "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
+      }
+    ],
+
+    "FileChanged": [
+      {
+        "matcher": ".env|.envrc",
         "hooks": [{ "type": "command", "command": "HookAgent/HookAgent", "async": false }]
       }
     ]

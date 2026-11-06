@@ -12,7 +12,8 @@ try { root = JsonNode.Parse(stdinJson); } catch (JsonException) { /* invalid JSO
 // 3. Collect Claude Code environment variables
 var envVars = new Dictionary<string, string>();
 foreach (var key in new[] { "CLAUDE_PROJECT_DIR", "CLAUDE_CODE_REMOTE",
-                             "CLAUDE_ENV_FILE", "CLAUDE_PLUGIN_ROOT" })
+                             "CLAUDE_ENV_FILE", "CLAUDE_PLUGIN_ROOT",
+                             "CLAUDE_EFFORT", "CLAUDE_CODE_BRIDGE_SESSION_ID" })
 {
     var val = Environment.GetEnvironmentVariable(key);
     if (val is not null) envVars[key] = val;

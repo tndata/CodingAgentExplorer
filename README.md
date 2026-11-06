@@ -273,7 +273,7 @@ C:\MyProject\
     settings.json
 ```
 
-**Step 3:** Copy `HookAgent\Sample-Settings-Windows\settings.json` from the repo to `.claude\settings.json` in the working directory. This registers HookAgent for 30 of the 33 Claude Code hook events (see [Hook events captured](#hook-events-captured)).
+**Step 3:** Copy `HookAgent\Sample-Settings-Windows\settings.json` from the repo to `.claude\settings.json` in the working directory. This registers HookAgent for 31 of the 33 Claude Code hook events (see [Hook events captured](#hook-events-captured)).
 
 **Step 4:** Start CodingAgentExplorer, then run `claude` from the working directory. Hook events appear in the Conversation View alongside API requests.
 
@@ -296,7 +296,7 @@ C:\MyProject\
     settings.json
 ```
 
-**Step 3:** Copy `HookAgent/Sample-Settings-LinuxMacOS/settings.json` from the repo to `.claude/settings.json` in the working directory. This registers HookAgent for 30 of the 33 Claude Code hook events (see [Hook events captured](#hook-events-captured)).
+**Step 3:** Copy `HookAgent/Sample-Settings-LinuxMacOS/settings.json` from the repo to `.claude/settings.json` in the working directory. This registers HookAgent for 31 of the 33 Claude Code hook events (see [Hook events captured](#hook-events-captured)).
 
 **Step 4:** Start CodingAgentExplorer, then run `claude` from the working directory. Hook events appear in the Conversation View alongside API requests.
 
@@ -308,7 +308,7 @@ The sample `settings.json` files assume the following. Change the file if your s
 - **The dashboard runs at `http://localhost:5000`.** That address is built into HookAgent. If the dashboard is not running, HookAgent exits silently with code 0 and Claude Code carries on.
 - **Hooks run synchronously** (`"async": false`), so Claude Code waits for HookAgent on each event. Only `MessageDisplay` is async, because it fires while text streams. Add `"async": true` to any entry if you only observe and do not need exact ordering.
 - **Tool events match every tool** (`"matcher": ".*"`). Narrow the matcher to watch only some tools.
-- **30 of the 33 hook events are registered**, as of Claude Code 2.1.318. `WorktreeCreate` and `WorktreeRemove` are left out because a hook for them replaces git's own worktree handling, and `FileChanged` is left out because it needs literal file names as matchers. If your Claude Code version does not know an event, remove its entry.
+- **31 of the 33 hook events are registered**, as of Claude Code 2.1.318. `WorktreeCreate` and `WorktreeRemove` are left out because a hook for them replaces git's own worktree handling (Claude Code reads the hook's stdout as the worktree path, and HookAgent is an observer that prints nothing). `FileChanged` is registered for `.env` and `.envrc`; it only fires for the literal file names in its matcher, so change them to the files you want to watch. If your Claude Code version does not know an event, remove its entry.
 - **On Windows, Claude Code runs hook commands with Git Bash,** or with PowerShell when Git Bash is not installed. Forward slashes in the command path work in both.
 ### Verify it works
 
@@ -343,6 +343,7 @@ Hook events appear inline in the Conversation View, interleaved with API request
 | `SubagentStart` / `SubagentStop` | A subagent is spawned or finishes |
 | `TaskCreated` / `TaskCompleted` / `TeammateIdle` | Task and agent team events |
 | `Notification` | Claude Code sends a notification |
+| `FileChanged` | A watched file (matcher: `.env\|.envrc`) changes on disk |
 | `PreCompact` / `PostCompact` | Before / after context compaction |
 | `PreModelSwitch` / `PostModelSwitch` | Before / after the model changes |
 | `InstructionsLoaded` | A `CLAUDE.md` file or rule is loaded into context |
