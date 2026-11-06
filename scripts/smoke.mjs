@@ -141,7 +141,8 @@ check("count_tokens is captured and gets no usage numbers", byPath("/v1/messages
 
 const main = byPath("/v1/messages?beta", "POST")[0];
 check("MCP requests were captured without a capture error", !mcpOk || snap.mcp.every((r) => r.error == null), snap.mcp.map((r) => r.error).filter(Boolean)[0] ?? "");
-check("x-api-key is redacted in the captured request headers", main?.apiKeyHeader === "[REDACTED]", `stored: ${main?.apiKeyHeader}`);
+// The detail never prints the stored value: if redaction failed, it would be the key itself.
+check("x-api-key is redacted in the captured request headers", main?.apiKeyHeader === "[REDACTED]", main?.apiKeyHeader === "[REDACTED]" ? "" : "stored value is not [REDACTED]");
 check("Claude Code headers are kept (session id, request class, prompt id)", main?.session === "smoke-session" && main?.class === "main" && main?.promptId === "smoke-prompt");
 const rawRequest = snap.raw.History.find((r) => r.path.startsWith("/v1/messages?beta"));
 check("The key value never appears anywhere in the captured request", !JSON.stringify(rawRequest).includes("test-not-a-real-key"));

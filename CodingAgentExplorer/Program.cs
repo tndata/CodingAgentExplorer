@@ -129,8 +129,11 @@ app.MapPost("/api/settings/api-upstream", async (
     if (!upstream.TrySetOverride(body.Url, out var error))
         return Results.BadRequest(new { error });
 
+    // The URL is normalised by TryNormalize (Uri escapes control characters), but strip line breaks
+    // anyway so a value from the Settings page can never forge an extra log line.
+    var loggedUrl = upstream.ActiveUrl.Replace("\r", "").Replace("\n", "");
     logger.LogInformation("API upstream (port 8888) changed to {Url} (from {Source})",
-        upstream.ActiveUrl, upstream.ActiveSource);
+        loggedUrl, upstream.ActiveSource);
     var state = upstream.Describe();
     await hub.Clients.All.SendAsync("ApiUpstreamChanged", state);
     return Results.Ok(state);
