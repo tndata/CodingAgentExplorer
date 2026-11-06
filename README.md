@@ -33,7 +33,7 @@ The Conversation View renders the raw API traffic as a readable chat-style timel
 
 ## MCP Observer
 
-The MCP Observer acts as a proxy between Claude Code and any HTTP-based MCP server. Configure the destination URL and all MCP traffic is captured and displayed in real time. The MCP Observer will be covered in a future blog post.
+The MCP Observer acts as a proxy between Claude Code and any HTTP-based MCP server. Configure the destination URL and all MCP traffic is captured and displayed in real time. Read more in [Visualizing Claude Code MCP Requests with Coding Agent Explorer](https://nestenius.se/ai/visualizing-claude-code-mcp-requests-with-coding-agent-explorer/).
 
 <img src="docs/images/MCP_Observer.png" alt="MCP Observer" width="800">
 
@@ -148,7 +148,9 @@ When Claude Code talks to a local model, start it with that model's name, for ex
 
 ## MCP Observer
 
-The MCP Observer lets you intercept and inspect traffic between Claude Code and any [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. It acts as a transparent proxy on port 9999, sitting between Claude Code and the real MCP server.
+The MCP Observer lets you intercept and inspect traffic between Claude Code and any [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that uses the HTTP transport. It acts as a transparent proxy on port 9999, sitting between Claude Code and the real MCP server.
+
+> **HTTP transport only.** MCP servers that run locally over stdio (added with `claude mcp add <name> -- <command>`) talk to Claude Code through stdin and stdout, so their traffic never passes the proxy and the MCP Observer stays empty. To see their tool calls, use [HookAgent](#hookagent): the `PreToolUse` and `PostToolUse` events also fire for MCP tools (tool names like `mcp__<server>__<tool>`).
 
 ```
 Claude Code  --►  MCP Observer (port 9999)  --►  Real MCP Server
