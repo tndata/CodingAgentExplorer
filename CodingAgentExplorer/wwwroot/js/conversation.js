@@ -725,25 +725,29 @@ function parseStreamingResponse(sseEvents) {
         let data;
         try { data = JSON.parse(evt.data); } catch { continue; }
 
-        const evtType = evt.eventType || data.type;
-
-        if (evtType === "content_block_start" && data.content_block) {
-            handleBlockStart(contentBlocks, data);
-        }
-        if (evtType === "content_block_delta" && data.delta) {
-            handleBlockDelta(contentBlocks, data);
-        }
-        if (evtType === "content_block_stop") {
-            handleBlockStop(contentBlocks, data);
-        }
-        if (evtType === "error" && data.error) {
-            // An error can arrive on a stream that already returned HTTP 200
-            contentBlocks.push({ type: "stream_error", error: data.error });
-        }
+        applyStreamEvent(contentBlocks, evt.eventType || data.type, data);
     }
 
     finalizeContentBlocks(contentBlocks);
     return contentBlocks.filter(Boolean);
+}
+
+function applyStreamEvent(contentBlocks, evtType, data) {
+    switch (evtType) {
+        case "content_block_start":
+            if (data.content_block) handleBlockStart(contentBlocks, data);
+            break;
+        case "content_block_delta":
+            if (data.delta) handleBlockDelta(contentBlocks, data);
+            break;
+        case "content_block_stop":
+            handleBlockStop(contentBlocks, data);
+            break;
+        case "error":
+            // An error can arrive on a stream that already returned HTTP 200
+            if (data.error) contentBlocks.push({ type: "stream_error", error: data.error });
+            break;
+    }
 }
 
 function handleBlockStart(contentBlocks, data) {
@@ -1040,33 +1044,44 @@ function updateCount() {
 
 // ---------- Hook Event Cards ----------
 
+// The one input field shown next to each hook badge: event name (lower case) -> [label, field].
+const HOOK_CONTEXT_FIELDS = new Map([
+    ["pretooluse",          ["tool",    "tool_name"]],
+    ["posttooluse",         ["tool",    "tool_name"]],
+    ["posttoolusefailure",  ["tool",    "tool_name"]],
+    ["permissiondenied",    ["tool",    "tool_name"]],
+    ["sessionstart",        ["source",  "source"]],
+    ["sessionend",          ["reason",  "reason"]],
+    ["subagentstart",       ["agent",   "agent_type"]],
+    ["subagentstop",        ["agent",   "agent_type"]],
+    ["notification",        ["type",    "notification_type"]],
+    ["setup",               ["trigger", "trigger"]],
+    ["postcompact",         ["trigger", "trigger"]],
+    ["userpromptexpansion", ["command", "command_name"]],
+    ["taskcreated",         ["task",    "task_subject"]],
+    ["stopfailure",         ["error",   "error"]],
+    ["instructionsloaded",  ["file",    "file_path"]],
+    ["cwdchanged",          ["to",      "new_cwd"]],
+    ["directoryadded",      ["dir",     "directory"]],
+    ["premodelswitch",      ["to",      "to_model"]],
+    ["postmodelswitch",     ["to",      "to_model"]],
+    ["elicitation",         ["server",  "mcp_server_name"]],
+    ["elicitationresult",   ["server",  "mcp_server_name"]],
+]);
+
 function hookEventContext(evt) {
     const input = evt.hookInput || {};
-    switch ((evt.hookEventName || "").toLowerCase()) {
-        case "pretooluse":
-        case "posttooluse":
-        case "posttoolusefailure":  return input.tool_name  ? { label: "tool",   value: input.tool_name }         : null;
-        case "sessionstart":        return input.source     ? { label: "source", value: input.source }             : null;
-        case "sessionend":          return input.reason     ? { label: "reason", value: input.reason }             : null;
-        case "subagentstart":
-        case "subagentstop":       return input.agent_type ? { label: "agent",  value: input.agent_type }         : null;
-        case "notification":        return input.notification_type ? { label: "type", value: input.notification_type } : null;
-        case "permissiondenied":    return input.tool_name  ? { label: "tool",   value: input.tool_name }         : null;
-        case "posttoolbatch":       return Array.isArray(input.tool_calls) ? { label: "tools", value: String(input.tool_calls.length) } : null;
-        case "setup":
-        case "postcompact":         return input.trigger    ? { label: "trigger", value: input.trigger }           : null;
-        case "userpromptexpansion": return input.command_name ? { label: "command", value: input.command_name }   : null;
-        case "taskcreated":         return input.task_subject ? { label: "task",  value: input.task_subject }      : null;
-        case "stopfailure":         return input.error      ? { label: "error",  value: input.error }             : null;
-        case "instructionsloaded":  return input.file_path  ? { label: "file",   value: input.file_path }         : null;
-        case "cwdchanged":          return input.new_cwd    ? { label: "to",     value: input.new_cwd }           : null;
-        case "directoryadded":      return input.directory  ? { label: "dir",    value: input.directory }         : null;
-        case "premodelswitch":
-        case "postmodelswitch":     return input.to_model   ? { label: "to",     value: input.to_model }          : null;
-        case "elicitation":
-        case "elicitationresult":   return input.mcp_server_name ? { label: "server", value: input.mcp_server_name } : null;
-        default:                    return null;
+    const eventName = (evt.hookEventName || "").toLowerCase();
+
+    // PostToolBatch shows a count, not a field value
+    if (eventName === "posttoolbatch") {
+        return Array.isArray(input.tool_calls) ? { label: "tools", value: String(input.tool_calls.length) } : null;
     }
+
+    const entry = HOOK_CONTEXT_FIELDS.get(eventName);
+    if (!entry) return null;
+    const [label, field] = entry;
+    return input[field] ? { label, value: input[field] } : null;
 }
 
 function buildHookEventElement(evt) {

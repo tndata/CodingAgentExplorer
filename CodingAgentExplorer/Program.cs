@@ -46,8 +46,10 @@ var app = builder.Build();
 
 // Show where port 8888 forwards to (fails at startup if the configured URL is invalid)
 var apiUpstream = app.Services.GetRequiredService<ApiUpstreamConfig>();
+var apiUpstreamUrl = apiUpstream.ActiveUrl;
+var apiUpstreamSource = apiUpstream.StartupSource;
 app.Logger.LogInformation("API upstream (port 8888): {Url} (from {Source})",
-    apiUpstream.ActiveUrl, apiUpstream.StartupSource);
+    apiUpstreamUrl, apiUpstreamSource);
 
 // The port in the Host header must be the port the request arrived on (see ListeningPortGuard),
 // so the RequireHost port checks below and the YARP host matches really bind to the listening port.

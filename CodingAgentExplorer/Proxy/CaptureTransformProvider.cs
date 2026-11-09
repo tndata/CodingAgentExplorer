@@ -178,37 +178,11 @@ public class CaptureTransformProvider : ITransformProvider
         clientResponse.Headers.CacheControl = "no-cache";
         clientResponse.Headers.Connection = "keep-alive";
 
-        // Log any unexpected Content-Encoding (should be empty after stripping Accept-Encoding).
-        // "identity" means no encoding, and some servers (Microsoft Learn MCP) send it explicitly.
-        var contentEncoding = proxyResponse.Content.Headers.ContentEncoding.FirstOrDefault();
-        if (!string.IsNullOrEmpty(contentEncoding)
-            && !contentEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
-        {
-            logger.LogWarning(
-                "SSE response has Content-Encoding: {Encoding} — forwarding may be corrupted. " +
-                "Ensure Accept-Encoding is stripped from outgoing requests.",
-                contentEncoding);
-            proxiedRequest.Error = $"Unexpected Content-Encoding on SSE stream: {contentEncoding}";
-        }
+        WarnOnUnexpectedContentEncoding(proxyResponse, proxiedRequest, logger);
 
         // Copy other response headers to client
-        foreach (var header in proxyResponse.Headers
-            .Where(header => !clientResponse.Headers.ContainsKey(header.Key)))
-        {
-            if (IsHopByHopHeader(header.Key))
-                continue;
-
-            clientResponse.Headers[header.Key] = header.Value.ToArray();
-        }
-
-        foreach (var header in proxyResponse.Content.Headers
-            .Where(header => !clientResponse.Headers.ContainsKey(header.Key)))
-        {
-            if (IsHopByHopHeader(header.Key))
-                continue;
-
-            clientResponse.Headers[header.Key] = header.Value.ToArray();
-        }
+        CopyHeaders(proxyResponse.Headers, clientResponse.Headers);
+        CopyHeaders(proxyResponse.Content.Headers, clientResponse.Headers);
 
         var upstreamStream = await proxyResponse.Content.ReadAsStreamAsync();
         using var streamReader = new StreamReader(upstreamStream, Encoding.UTF8);
@@ -227,29 +201,8 @@ public class CaptureTransformProvider : ITransformProvider
                 await clientWriter.WriteAsync(bytes);
                 await clientWriter.FlushAsync();
 
-                // Parse SSE event
-                if (line.StartsWith("event: "))
-                {
-                    currentEventType = line["event: ".Length..];
-                }
-                else if (line.StartsWith("data: "))
-                {
-                    var data = line["data: ".Length..];
-
-                    proxiedRequest.SseEvents.Add(new SseEvent
-                    {
-                        EventType = currentEventType,
-                        Data = data
-                    });
-
-                    if (!isMcp)
-                        ParseSseEventData(proxiedRequest, currentEventType, data,
-                            stopwatch, ref firstTokenSeen);
-                }
-                else if (line == "")
-                {
-                    currentEventType = null;
-                }
+                ProcessSseLine(line, proxiedRequest, stopwatch, isMcp,
+                    ref currentEventType, ref firstTokenSeen);
             }
         }
         catch (Exception ex)
@@ -260,6 +213,66 @@ public class CaptureTransformProvider : ITransformProvider
 
         stopwatch.Stop();
         proxiedRequest.DurationMs = stopwatch.Elapsed.TotalMilliseconds;
+    }
+
+    // Log any unexpected Content-Encoding (should be empty after stripping Accept-Encoding).
+    // "identity" means no encoding, and some servers (Microsoft Learn MCP) send it explicitly.
+    private static void WarnOnUnexpectedContentEncoding(
+        HttpResponseMessage proxyResponse, ProxiedRequest proxiedRequest, ILogger logger)
+    {
+        var contentEncoding = proxyResponse.Content.Headers.ContentEncoding.FirstOrDefault();
+        if (string.IsNullOrEmpty(contentEncoding)
+            || contentEncoding.Equals("identity", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        logger.LogWarning(
+            "SSE response has Content-Encoding: {Encoding} — forwarding may be corrupted. " +
+            "Ensure Accept-Encoding is stripped from outgoing requests.",
+            contentEncoding);
+        proxiedRequest.Error = $"Unexpected Content-Encoding on SSE stream: {contentEncoding}";
+    }
+
+    // Copies upstream headers the client response does not already have, skipping hop-by-hop headers.
+    private static void CopyHeaders(
+        IEnumerable<KeyValuePair<string, IEnumerable<string>>> source, IHeaderDictionary target)
+    {
+        foreach (var header in source)
+        {
+            if (target.ContainsKey(header.Key) || IsHopByHopHeader(header.Key))
+                continue;
+
+            target[header.Key] = header.Value.ToArray();
+        }
+    }
+
+    // Parses one SSE line: "event: " sets the event type, "data: " records an event,
+    // and a blank line ends the event.
+    private static void ProcessSseLine(
+        string line, ProxiedRequest proxiedRequest, Stopwatch stopwatch, bool isMcp,
+        ref string? currentEventType, ref bool firstTokenSeen)
+    {
+        if (line.StartsWith("event: "))
+        {
+            currentEventType = line["event: ".Length..];
+        }
+        else if (line.StartsWith("data: "))
+        {
+            var data = line["data: ".Length..];
+
+            proxiedRequest.SseEvents.Add(new SseEvent
+            {
+                EventType = currentEventType,
+                Data = data
+            });
+
+            if (!isMcp)
+                ParseSseEventData(proxiedRequest, currentEventType, data,
+                    stopwatch, ref firstTokenSeen);
+        }
+        else if (line == "")
+        {
+            currentEventType = null;
+        }
     }
 
     private static bool IsHopByHopHeader(string headerName)
