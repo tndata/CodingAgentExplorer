@@ -1,12 +1,19 @@
 name: SonarQube
+
+# Static analysis on SonarQube Cloud (project tndata_CodingAgentExplorer).
+# Build and test runs in build-and-test.yml, and CodeQL runs through GitHub's default setup.
 on:
   push:
     branches:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
 jobs:
-  build:
+  analyze:
     name: Build and analyze
     # SONAR_TOKEN is not available to pull requests from forks or Dependabot, so the analysis only runs
     # on pushes and on pull requests from branches in this repository. Build and test runs for all of them.
@@ -14,23 +21,26 @@ jobs:
       github.event_name == 'push' ||
       (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
     runs-on: windows-latest
-    permissions:
-      contents: read
     steps:
+      # The scanner needs Java
       - name: Set up JDK 17
         uses: actions/setup-java@v6
         with:
           java-version: 17
-          distribution: 'zulu' # Alternative distribution options are available.
+          distribution: zulu
+
+      # Full history, so SonarQube can tell new code from old
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
+
       - name: Cache SonarQube Cloud packages
         uses: actions/cache@v6
         with:
           path: ~\sonar\cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
+
       - name: Cache SonarQube Cloud scanner
         id: cache-sonar-scanner
         uses: actions/cache@v6
@@ -38,17 +48,20 @@ jobs:
           path: ${{ runner.temp }}\scanner
           key: ${{ runner.os }}-sonar-scanner
           restore-keys: ${{ runner.os }}-sonar-scanner
+
       - name: Install SonarQube Cloud scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: powershell
         run: |
           New-Item -Path ${{ runner.temp }}\scanner -ItemType Directory
           dotnet tool update dotnet-sonarscanner --tool-path ${{ runner.temp }}\scanner
+
+      # The token is read from the environment, so it never appears in the command line
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: powershell
         run: |
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"tndata_CodingAgentExplorer" /o:"tndata" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.scanner.scanAll=false
-          dotnet build
-          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner begin /k:"tndata_CodingAgentExplorer" /o:"tndata" /d:sonar.token="$env:SONAR_TOKEN" /d:sonar.scanner.scanAll=false
+          dotnet build CodingAgentExplorer.slnx
+          ${{ runner.temp }}\scanner\dotnet-sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
