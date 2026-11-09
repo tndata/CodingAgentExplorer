@@ -59,10 +59,15 @@ app.Use(ListeningPortGuard.Middleware);
 // Blocks other web pages (cross-site WebSocket to the hub) and DNS rebinding. HookAgent and scripts send no Origin.
 app.Use(DashboardRequestGuard.Middleware);
 
-// Serve static files only on dashboard ports
+// Serve static files only on dashboard ports. UseDefaultFiles makes a folder URL such as
+// /inspector/ serve that folder's index.html instead of falling through to the start page.
 app.UseWhen(
     ctx => ctx.Connection.LocalPort is 5000 or 5001,
-    branch => branch.UseStaticFiles());
+    branch => branch.UseDefaultFiles().UseStaticFiles());
+
+// Route after the static files: otherwise routing runs first and the index.html fallback below
+// already claims /inspector/ before UseDefaultFiles can rewrite it.
+app.UseRouting();
 
 // Dashboard endpoints (ports 5000/5001 only)
 app.MapHub<DashboardHub>("/hub").RequireHost(DashboardPort5000, DashboardPort5001);
