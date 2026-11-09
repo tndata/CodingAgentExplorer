@@ -104,14 +104,14 @@ public class CaptureParsingTests
     }
 
     [Fact]
-    public void First_content_block_delta_sets_time_to_first_token_once()
+    public async Task First_content_block_delta_sets_time_to_first_token_once()
     {
         var request = new ProxiedRequest();
         var stopwatch = Stopwatch.StartNew();
         var seen = false;
         CaptureTransformProvider.ParseSseEventData(request, "content_block_delta", "{}", stopwatch, ref seen);
         var first = request.TimeToFirstTokenMs;
-        Thread.Sleep(20);
+        await Task.Delay(20);
         CaptureTransformProvider.ParseSseEventData(request, "content_block_delta", "{}", stopwatch, ref seen);
 
         Assert.NotNull(first);
