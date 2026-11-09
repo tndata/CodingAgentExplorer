@@ -38,6 +38,9 @@ dotnet_diagnostic.CA1812.severity = none
 dotnet_diagnostic.CA1852.severity = none
 dotnet_diagnostic.CA2007.severity = none
 
+# CA1873: Avoid potentially expensive logging (logging cost does not matter in this dev tool)
+dotnet_diagnostic.CA1873.severity = none
+
 
 # IDE0008: Use explicit type
 dotnet_diagnostic.IDE0008.severity = none
