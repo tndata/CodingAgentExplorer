@@ -7,7 +7,7 @@ ASP.NET Core reverse proxy using YARP that sits between AI coding agents (such a
 - **Port 8888** (`localhost`): YARP reverse proxy forwarding to LLM API (HTTP)
 - **Port 9999** (`localhost`): YARP reverse proxy forwarding to MCP server (HTTP), destination configured at runtime
 - **Port 5000** (`localhost`): Dashboard (HTTP)
-- **Port 5001** (`localhost`): Dashboard (HTTPS, auto-launches browser)
+- **Port 5001** (`localhost`): Dashboard (HTTPS; the browser opens only when started from Visual Studio, through `launchSettings.json`)
 - Single NuGet dependency in the app (`Yarp.ReverseProxy`); unit tests in `CodingAgentExplorer.Tests` (xUnit)
 
 ## Build & Run

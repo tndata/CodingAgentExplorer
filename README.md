@@ -73,21 +73,27 @@ This starts four endpoints:
 - **Port 8888** - The reverse proxy (HTTP, point your coding agent here)
 - **Port 9999** - The MCP proxy (HTTP, used by the MCP Observer)
 - **Port 5000** - The web dashboard (HTTP)
-- **Port 5001** - The web dashboard (HTTPS, auto-launches in browser)
+- **Port 5001** - The web dashboard (HTTPS)
 
 ### 4. Configure your coding agent
 
 For **Claude Code**, set the `ANTHROPIC_BASE_URL` environment variable to point at the proxy.
 
-**Linux / macOS:**
+**Linux / macOS / Git Bash:**
 
-Use `source` (not `bash`) so the variable is exported to your current shell:
+Use `source`, so the variables are set in your current shell:
 
 ```bash
 source EnableProxy.sh
 ```
 
-Run `source DisableProxy.sh` to clear it when you are done.
+Running the script instead (`./EnableProxy.sh` or `bash EnableProxy.sh`) sets the variables in a child shell that exits at once, so Claude Code would bypass the proxy. The script refuses to run that way and tells you to use `source`. To check that it worked:
+
+```bash
+echo $ANTHROPIC_BASE_URL
+```
+
+It should print `http://localhost:8888`. Run `source DisableProxy.sh` to clear it when you are done.
 
 **Windows (cmd):**
 
@@ -117,7 +123,7 @@ Then use Claude Code as you normally would.
 
 ### 5. Open the dashboard
 
-Navigate to [https://localhost:5001](https://localhost:5001) in your browser. On Windows the browser opens automatically on `dotnet run`. On macOS and Linux, open it manually.
+Open [https://localhost:5001](https://localhost:5001) in your browser. The app does not open it for you, except when you start it from Visual Studio.
 
 You will see three views and a settings page:
 
