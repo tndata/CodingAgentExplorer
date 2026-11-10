@@ -37,8 +37,6 @@
         .toolbar-sep { color: var(--border); }
         .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
         .separator { color: var(--border); }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--red); }
-        .status-dot.connected { background: var(--green); }
         .clear-btn {
             background: var(--bg-tertiary);
             border: 1px solid var(--border);
@@ -318,9 +316,6 @@
         <button class="clear-btn" onclick="document.getElementById('helpModal').showModal()">Help</button>
         <span class="separator">|</span>
         <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light/dark theme" title="Toggle light/dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
-        <span class="separator">|</span>
-        <span class="status-dot" id="connDot"></span>
-        <span id="connText">Disconnected</span>
     </div>
 </div>
 
@@ -433,15 +428,7 @@
         document.getElementById('detailPanel').style.display = 'none';
     });
 
-    function setConnected(on) {
-        document.getElementById('connDot').className = 'status-dot' + (on ? ' connected' : '');
-        document.getElementById('connText').textContent = on ? 'Connected' : 'Disconnected';
-    }
-
-    conn.onreconnecting(() => setConnected(false));
-    conn.onreconnected(() => setConnected(true));
     await conn.start();
-    setConnected(true);
 
     function addOrUpdate(r, scrollToBottom) {
         const idx = requests.findIndex(x => x.id === r.id);

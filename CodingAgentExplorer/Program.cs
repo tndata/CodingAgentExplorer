@@ -61,9 +61,15 @@ app.Use(DashboardRequestGuard.Middleware);
 
 // Serve static files only on dashboard ports. UseDefaultFiles makes a folder URL such as
 // /inspector/ serve that folder's index.html instead of falling through to the start page.
+// "no-cache" makes the browser check the ETag on every load (a cheap 304 when unchanged), so after
+// an update it never mixes new HTML with an old cached script.
+var noCacheStaticFiles = new StaticFileOptions
+{
+    OnPrepareResponse = ctx => ctx.Context.Response.Headers.CacheControl = "no-cache"
+};
 app.UseWhen(
     ctx => ctx.Connection.LocalPort is 5000 or 5001,
-    branch => branch.UseDefaultFiles().UseStaticFiles());
+    branch => branch.UseDefaultFiles().UseStaticFiles(noCacheStaticFiles));
 
 // Route after the static files: otherwise routing runs first and the index.html fallback below
 // already claims /inspector/ before UseDefaultFiles can rewrite it.
@@ -148,7 +154,7 @@ app.MapPost("/api/settings/api-upstream", async (
 .RequireHost(DashboardPort5000, DashboardPort5001)
 .AddEndpointFilter(DashboardRequestGuard.Filter);
 
-app.MapFallbackToFile("index.html").RequireHost(DashboardPort5000, DashboardPort5001);
+app.MapFallbackToFile("index.html", noCacheStaticFiles).RequireHost(DashboardPort5000, DashboardPort5001);
 
 // YARP reverse proxy (routes built in DynamicProxyConfigProvider: 8888 to the API upstream, 9999 to MCP)
 app.MapReverseProxy();

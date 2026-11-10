@@ -9,35 +9,15 @@ let activeTab = "overview";
 
 // DOM elements
 const tbody = document.getElementById("requestTableBody");
-const statusDot = document.getElementById("connectionStatus");
-const statusText = document.getElementById("connectionText");
-const requestCount = document.getElementById("requestCount");
 const detailPanel = document.getElementById("detailPanel");
 const detailTitle = document.getElementById("detailTitle");
 const detailContent = document.getElementById("detailContent");
 const closeDetail = document.getElementById("closeDetail");
 
-// Connection status
-connection.onreconnecting(() => {
-    statusDot.className = "status-dot disconnected";
-    statusText.textContent = "Reconnecting...";
-});
-
-connection.onreconnected(() => {
-    statusDot.className = "status-dot connected";
-    statusText.textContent = "Connected";
-});
-
-connection.onclose(() => {
-    statusDot.className = "status-dot disconnected";
-    statusText.textContent = "Disconnected";
-});
-
 // Receive history on connect
 connection.on("History", (history) => {
     requests = history;
     renderTable();
-    updateCount();
 });
 
 // Receive clear
@@ -46,7 +26,6 @@ connection.on("Cleared", () => {
     selectedId = null;
     detailPanel.classList.add("hidden");
     renderTable();
-    updateCount();
 });
 
 // Clear button
@@ -58,7 +37,6 @@ document.getElementById("clearBtn").addEventListener("click", () => {
 connection.on("NewRequest", (req) => {
     requests.push(req);
     renderTable();
-    updateCount();
 
     // If detail panel is showing this request, refresh it
     if (selectedId === req.id) {
@@ -69,8 +47,6 @@ connection.on("NewRequest", (req) => {
 // Start connection
 try {
     await connection.start();
-    statusDot.className = "status-dot connected";
-    statusText.textContent = "Connected";
 } catch (err) {
     console.error("SignalR connection error:", err);
 }
@@ -112,9 +88,6 @@ function renderTable() {
     tbody.appendChild(fragment);
 }
 
-function updateCount() {
-    requestCount.textContent = `${requests.length} request${requests.length === 1 ? "" : "s"}`;
-}
 
 // Detail panel
 function showDetail(req) {

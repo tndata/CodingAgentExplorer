@@ -85,9 +85,6 @@
         </div>
         <div class="status">
             <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light/dark theme" title="Toggle light/dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
-            <span class="separator">|</span>
-            <span id="connectionStatus" class="status-dot disconnected"></span>
-            <span id="connectionText">Disconnected</span>
         </div>
     </header>
 
@@ -163,18 +160,9 @@
         else active.textContent = 'Could not load the current upstream (HTTP ' + response.status + ')';
 
         // Live updates when the upstream is changed from another tab
-        const dot = document.getElementById('connectionStatus');
-        const text = document.getElementById('connectionText');
-        const setConnected = (on) => {
-            dot.className = 'status-dot ' + (on ? 'connected' : 'disconnected');
-            text.textContent = on ? 'Connected' : 'Disconnected';
-        };
         const connection = new signalR.HubConnectionBuilder().withUrl('/hub').withAutomaticReconnect().build();
         connection.on('ApiUpstreamChanged', show);
-        connection.onreconnecting(() => setConnected(false));
-        connection.onreconnected(() => setConnected(true));
-        connection.onclose(() => setConnected(false));
-        try { await connection.start(); setConnected(true); } catch { setConnected(false); }
+        try { await connection.start(); } catch (err) { console.error('SignalR connection error:', err); }
     </script>
 </body>
 </html>

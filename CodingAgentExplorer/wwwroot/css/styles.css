@@ -87,21 +87,6 @@ header h1 {
     color: var(--text-secondary);
 }
 
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.status-dot.connected {
-    background: var(--green);
-}
-
-.status-dot.disconnected {
-    background: var(--red);
-}
-
 .separator {
     color: var(--border);
 }

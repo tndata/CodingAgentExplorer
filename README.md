@@ -115,6 +115,8 @@ Remove-Item Env:ANTHROPIC_BASE_URL
 Remove-Item Env:CLAUDE_CODE_GATEWAY_HINT_HEADERS
 ```
 
+Or use the scripts: `.\EnableProxy.ps1` and `.\DisableProxy.ps1`. If PowerShell says running scripts is disabled on this system, use the lines above, or allow scripts for this session with `Set-ExecutionPolicy -Scope Process Bypass`. If you downloaded the repository as a zip, run `Unblock-File *.ps1` once. Note that `EnableProxy.bat` does not work from PowerShell: it runs in a separate cmd process, so the variables are gone when it ends.
+
 The scripts also set `CLAUDE_CODE_GATEWAY_HINT_HEADERS=1`. Claude Code sends extra `x-claude-code-*` request headers (request class: main, subagent or auxiliary; agent type; prompt id; tool durations) when it talks to `api.anthropic.com` directly, but not through a custom `ANTHROPIC_BASE_URL` unless this variable is set. With it, the proxy sees the same headers as a direct session.
 
 All scripts only affect the current terminal session. The variables are not persisted, so closing the terminal automatically clears them.

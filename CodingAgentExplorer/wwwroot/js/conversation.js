@@ -9,23 +9,7 @@ let showHookEvents = false;
 
 // DOM
 const feed = document.getElementById("conversationFeed");
-const statusDot = document.getElementById("connectionStatus");
-const statusText = document.getElementById("connectionText");
-const requestCount = document.getElementById("requestCount");
-
-// Connection status
-connection.onreconnecting(() => {
-    statusDot.className = "status-dot disconnected";
-    statusText.textContent = "Reconnecting...";
-});
-connection.onreconnected(() => {
-    statusDot.className = "status-dot connected";
-    statusText.textContent = "Connected";
-});
-connection.onclose(() => {
-    statusDot.className = "status-dot disconnected";
-    statusText.textContent = "Disconnected";
-});
+const hookCount = document.getElementById("hookCount");
 
 // Receive history
 connection.on("History", (history) => {
@@ -89,8 +73,6 @@ connection.on("NewRequest", (req) => {
 // Start
 try {
     await connection.start();
-    statusDot.className = "status-dot connected";
-    statusText.textContent = "Connected";
 } catch (err) {
     console.error("SignalR connection error:", err);
 }
@@ -502,9 +484,11 @@ function buildHistorySection(messages) {
 function buildRoleSummary(messages) {
     const userCount = messages.filter(m => (m.role || "user") === "user").length;
     const assistantCount = messages.filter(m => m.role === "assistant").length;
+    const systemCount = messages.filter(m => m.role === "system").length;
     const parts = [];
     if (userCount > 0) parts.push(`${userCount} user`);
     if (assistantCount > 0) parts.push(`${assistantCount} assistant`);
+    if (systemCount > 0) parts.push(`${systemCount} system`);
     return parts.join(", ");
 }
 
@@ -531,17 +515,32 @@ function estimateContentChars(content) {
 
 // ---------- Message Bubbles ----------
 
+// Label, CSS class and (?) tooltip per message role in the request's messages array.
+const MESSAGE_ROLES = {
+    user: ["User", "message-user",
+        "Your prompt, plus tool results and reminders that Claude Code adds."],
+    assistant: ["Assistant (History)", "message-assistant-history",
+        "Resent each turn: the API keeps no memory between requests."],
+    system: ["System", "message-system",
+        "Extra context from Claude Code, such as # Environment. Not the main system prompt."],
+};
+
 function buildMessageBubble(msg) {
     const role = msg.role || "user";
-    const isUser = role === "user";
-    const cssClass = isUser ? "message-user" : "message-assistant-history";
+    const [labelText, cssClass, help] = MESSAGE_ROLES[role]
+        ?? [role, "message-system", `A message with role "${role}".`];
 
     const bubble = document.createElement("div");
     bubble.className = `message ${cssClass}`;
 
     const label = document.createElement("span");
     label.className = "role-label";
-    label.textContent = isUser ? "User" : "Assistant (History)";
+    label.textContent = labelText;
+    const helpIcon = document.createElement("span");
+    helpIcon.className = "role-help";
+    helpIcon.textContent = "(?)";
+    helpIcon.title = help;
+    label.appendChild(helpIcon);
     bubble.appendChild(label);
 
     const content = msg.content;
@@ -1035,11 +1034,9 @@ function autoScroll() {
     });
 }
 
+// Number of hook events, shown next to the "Hook Events" toggle (the cards are hidden by default).
 function updateCount() {
-    const label = requests.length === 1 ? "exchange" : "exchanges";
-    const hookLabel = hookEvents.length === 1 ? "hook" : "hooks";
-    const hookSuffix = hookEvents.length > 0 ? `, ${hookEvents.length} ${hookLabel}` : "";
-    requestCount.textContent = `${requests.length} ${label}${hookSuffix}`;
+    hookCount.textContent = `(${hookEvents.length})`;
 }
 
 // ---------- Hook Event Cards ----------

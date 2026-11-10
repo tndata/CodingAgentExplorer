@@ -87,16 +87,6 @@ header h1 {
     color: var(--text-secondary);
 }
 
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.status-dot.connected { background: var(--green); }
-.status-dot.disconnected { background: var(--red); }
-
 .separator {
     color: var(--border);
 }
@@ -471,6 +461,13 @@ main {
     opacity: 0.65;
 }
 
+.message-system {
+    align-self: flex-start;
+    background: var(--bg);
+    border-left: 3px solid var(--orange);
+    opacity: 0.8;
+}
+
 .message-response {
     align-self: flex-end;
     background: var(--bg);
@@ -487,6 +484,14 @@ main {
 
 .message-user .role-label { color: var(--accent); }
 .message-assistant-history .role-label { color: var(--purple); }
+.message-system .role-label { color: var(--orange); }
+.message .role-help {
+    margin-left: 6px;
+    font-weight: 400;
+    text-transform: none;
+    cursor: help;
+    opacity: 0.7;
+}
 .message-response .role-label { color: var(--green); }
 
 /* Content blocks */
