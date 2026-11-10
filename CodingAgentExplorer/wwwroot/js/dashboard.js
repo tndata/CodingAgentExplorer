@@ -238,9 +238,16 @@ function renderRequest(req) {
         .join("\n");
 
     let body = req.requestBody || "";
+    let isJson = false;
     try {
         body = JSON.stringify(JSON.parse(body), null, 2);
+        isJson = true;
     } catch { }
+
+    // Opens the body as a collapsible JSON tree in the Request Inspector (wwwroot/request/).
+    const treeLink = isJson
+        ? `<a class="section-link-btn" href="/request/index.html?id=${encodeURIComponent(req.id)}" target="_blank" rel="noopener" title="Open the request body as a collapsible JSON tree in a new tab">Tree view</a>`
+        : "";
 
     return `
         <div class="detail-section">
@@ -254,6 +261,7 @@ function renderRequest(req) {
             <div class="section-header">
                 <h3>Request Body</h3>
                 <button class="section-copy-btn">Copy</button>
+                ${treeLink}
             </div>
             <pre class="code-block">${esc(body) || "(empty)"}</pre>
         </div>`;

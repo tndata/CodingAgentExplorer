@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Agent Explorer - Request Inspector</title>
+    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/request.css">
+    <script src="../js/theme.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-left">
+            <nav class="toolbar">
+                <a href="/" class="toolbar-link">Home</a>
+                <span class="toolbar-sep">|</span>
+                <a href="/inspector/index.html" class="toolbar-link">Inspector</a>
+                <span class="toolbar-sep">|</span>
+                <a href="/conversation/index.html" class="toolbar-link">Conversation</a>
+                <span class="toolbar-sep">|</span>
+                <a href="/mcp/index.html" class="toolbar-link">MCP Observer</a>
+                <span class="toolbar-sep">|</span>
+                <a href="/settings/index.html" class="toolbar-link">Settings</a>
+            </nav>
+            <h1>Request Inspector</h1>
+        </div>
+        <div class="status">
+            <label class="sum-toggle" title="Show a short summary in collapsed nodes: tool names, message roles and the start of each text"><input type="checkbox" id="summaryToggle" checked> Summaries</label>
+            <button id="expandAllBtn" class="clear-btn tree-btn" disabled>Expand all</button>
+            <button id="collapseAllBtn" class="clear-btn tree-btn" disabled>Collapse all</button>
+            <span class="separator">|</span>
+            <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light/dark theme" title="Toggle light/dark mode" onclick="toggleTheme()"><span class="theme-icon">🌙</span></button>
+        </div>
+    </header>
+
+    <main class="req-main">
+        <div id="reqInfo" class="req-info">Loading...</div>
+        <div id="tree" class="jt"></div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" integrity="sha512-7SRCYIJtR6F8ocwW7UxW6wGKqbSyqREDbfCORCbGLatU0iugBLwyOXpzhkPyHIFdBO0K2VCu57fvP2Twgx1o2A==" crossorigin="anonymous"></script>
+    <script type="module" src="../js/request.js"></script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+/* Request Inspector: the request body as a collapsible JSON tree (wwwroot/request/). */
+
+.req-main {
+    display: block;
+    overflow: auto;
+    padding: 16px 20px;
+}
+
+.tree-btn:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.tree-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.req-info {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.req-info strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.req-info .req-error {
+    color: var(--red);
+}
+
+.jt {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 0;
+}
+
+.jt:empty {
+    display: none;
+}
+
+.jt-line {
+    display: flex;
+    min-width: 0;
+}
+
+.jt-line:hover {
+    background: var(--bg-tertiary);
+}
+
+.jt-ln {
+    flex: none;
+    text-align: right;
+    padding: 0 12px 0 8px;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    user-select: none;
+}
+
+.jt-code {
+    flex: 1;
+    min-width: 0;
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 12px;
+}
+
+.jt-head {
+    cursor: pointer;
+}
+
+.jt-head:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.jt-arrow {
+    display: inline-block;
+    width: 2ch;
+    margin-left: -2ch;
+    color: var(--text-secondary);
+}
+
+.jt-key { color: var(--purple); }
+.jt-str { color: var(--green); }
+.jt-num { color: var(--orange); }
+.jt-bool, .jt-null { color: var(--accent); }
+.jt-punct { color: var(--text-secondary); }
+
+.jt-ph {
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0 3px;
+}
+
+/* Summaries in collapsed placeholders; the checkbox switches back to plain {...}. */
+.jt-ph.jt-has-sum .jt-ph-plain,
+.jt-nosum .jt-ph-sum {
+    display: none;
+}
+
+.jt-nosum .jt-ph.jt-has-sum .jt-ph-plain {
+    display: inline;
+}
+
+.jt-sum-label { color: var(--text-secondary); }
+.jt-sum-name { color: var(--text); font-weight: 600; }
+
+.sum-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Long strings are cut to one line; a click shows the whole string. */
+.jt-long {
+    cursor: pointer;
+}
+
+.jt-long.jt-wrapped .jt-code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.jt-node.jt-collapsed > .jt-children,
+.jt-node.jt-collapsed > .jt-close {
+    display: none;
+}
+
+.jt-node:not(.jt-collapsed) > .jt-head .jt-ph,
+.jt-node:not(.jt-collapsed) > .jt-head .jt-after {
+    display: none;
+}
+
+.jt-node.jt-collapsed > .jt-head .jt-open {
+    display: none;
+}
+
+.jt-raw {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding: 0 12px;
+}

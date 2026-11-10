@@ -302,7 +302,8 @@ main {
     margin-bottom: 0;
 }
 
-.section-copy-btn {
+.section-copy-btn,
+.section-link-btn {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
     color: var(--text-secondary);
@@ -313,7 +314,14 @@ main {
     transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.section-copy-btn:hover {
+/* "Tree view" link next to the Request Body's Copy button; a link styled as a button. */
+.section-link-btn {
+    text-decoration: none;
+    line-height: normal;
+}
+
+.section-copy-btn:hover,
+.section-link-btn:hover {
     background: var(--accent);
     color: var(--text);
     border-color: var(--accent);

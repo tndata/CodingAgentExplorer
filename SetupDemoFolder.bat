@@ -33,6 +33,16 @@ copy /y "Published\HookAgent\HookAgent.exe" "%TARGET%\HookAgent\" >nul
 copy /y "Published\HookAgent\HookAgent.pdb" "%TARGET%\HookAgent\" >nul
 if errorlevel 1 goto :fail
 
+rem Local-scope MCP servers are stored in ~/.claude.json under the folder path, not in the folder,
+rem so they survive clearing it. Remove the demo servers so the MCP demos start clean.
+echo.
+echo === Removing local MCP servers for %TARGET% ===
+pushd "%TARGET%"
+for %%S in (clouddebugger mcp_proxy) do (
+    call claude mcp remove %%S -s local >nul 2>&1
+)
+popd
+
 echo.
 echo Done. %TARGET% now contains:
 echo.
