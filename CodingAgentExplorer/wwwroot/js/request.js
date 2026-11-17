@@ -220,18 +220,24 @@ function summarize(obj) {
     if (typeof obj.name === "string") {
         add("jt-sum-name", obj.name);
     } else {
-        const text = firstText(obj, 0);
-        if (text) {
-            const json = JSON.stringify(text);
-            add("jt-str", json.length > SNIPPET + 2 ? json.slice(0, SNIPPET + 1) + '..."' : json);
-        } else if (Array.isArray(obj.content)) {
-            // No text anywhere (for example thinking + tool_use): name the first block that says what happens.
-            const block = obj.content.find(b => b && typeof b.name === "string")
-                ?? obj.content.find(b => b && typeof b.type === "string");
-            if (block) add("jt-sum-label", block.name ? `${block.type}: ${block.name}` : block.type);
-        }
+        addTextSummary(obj, add);
     }
     return parts.length ? parts : null;
+}
+
+// The start of the object's text, or failing that the first content block that says what happens.
+function addTextSummary(obj, add) {
+    const text = firstText(obj, 0);
+    if (text) {
+        const json = JSON.stringify(text);
+        add("jt-str", json.length > SNIPPET + 2 ? json.slice(0, SNIPPET + 1) + '..."' : json);
+        return;
+    }
+    if (!Array.isArray(obj.content)) return;
+    // No text anywhere (for example thinking + tool_use): name the first block that says what happens.
+    const block = obj.content.find(b => b && typeof b.name === "string")
+        ?? obj.content.find(b => b && typeof b.type === "string");
+    if (block) add("jt-sum-label", block.name ? `${block.type}: ${block.name}` : block.type);
 }
 
 function firstText(value, depth) {
